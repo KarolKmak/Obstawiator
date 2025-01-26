@@ -41,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ];
 
   fetchData() async{
-    var url = Uri.parse("https://briskwriter-eu.backendless.app/api/data/StandingsTable");
+    var url = Uri.parse("https://earlycub-eu.backendless.app/api/data/StandingsTable?sortBy=%60Points%60%20desc");
     var response = await http.get(url);
 
     if(response.statusCode == 200) {
