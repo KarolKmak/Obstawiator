@@ -1,0 +1,1 @@
+ C:\\Users\\00gru\\AndroidStudioProjects\\Obstawiator\\.dart_tool\\flutter_build\\5de06fcf2fd207402b348eec35205556\\native_assets.yaml: 
