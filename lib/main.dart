@@ -58,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final scaffold = ScaffoldMessenger.of(context);
       scaffold.showSnackBar(
         SnackBar(
-          content: const Text('No nie działa...'),
+          content: const Text('No nie działa... co ci poradzę?'),
           action: SnackBarAction(label: 'No ok...', onPressed: scaffold.hideCurrentSnackBar),
         ),
       );
