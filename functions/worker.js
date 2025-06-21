@@ -1,4 +1,4 @@
-export default
+export function onRequest(context)
 {
   async fetch(request, env, ctx)
   {
