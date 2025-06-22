@@ -13,7 +13,7 @@ export async function onRequestPost(context)
   //Sprawdzanie czy token jest poprawny
   if(reqBody.token!=1234)
   {
-    return Response.json({messege: "Niepoprawny token", result: 3}, {status: 403});
+    return Response.json({message: "Niepoprawny token", result: 3}, {status: 403});
   }
   //Sprawdzanie czy użytkownik istnieje
   const checkEmail = context.env.obstawiatorDB.prepare("SELECT name FROM Users WHERE email = ?").bind(reqBody.email);
@@ -28,7 +28,7 @@ export async function onRequestPost(context)
   const checkUserResult = await checkUser.run();
   if(checkUserResult.results.length>0)
   {
-    return Response.json({messege: "Nazwa użytkownika już zajęta", result: 2}, {status: 403});
+    return Response.json({message: "Nazwa użytkownika już zajęta", result: 2}, {status: 403});
   }
   //Wyszukiwanie ID
   const getNewID = context.env.obstawiatorDB.prepare("SELECT MAX(ID) as ID FROM Users");
@@ -38,5 +38,5 @@ export async function onRequestPost(context)
   const stmt = context.env.obstawiatorDB.prepare("INSERT INTO Users (ID, name, email, password) VALUES (?, ?, ?, ?)").bind(newID, reqBody.name, reqBody.email, reqBody.password);
   const result = await stmt.run();
 
-  return Response.json({messege:"Zarejestrowano użytkownika", result: 0, userID: newID}, {status: 201});
+  return Response.json({message:"Zarejestrowano użytkownika", result: 0, userID: newID}, {status: 201});
 }

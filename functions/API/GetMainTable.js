@@ -20,6 +20,6 @@ export async function onRequestPost(context)
   }
   else
   {
-    return Response.json({messege:"Nieznany użytkownik. Zarejestruj się, lub zaloguj na prawidłowego użytkownika"}, {status: 404});
+    return Response.json({message:"Nieznany użytkownik. Zarejestruj się, lub zaloguj na prawidłowego użytkownika"}, {status: 401});
   }
 }
