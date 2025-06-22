@@ -10,6 +10,11 @@ export async function onRequestPost(context)
   {
     return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
   }
+  //Sprawdzanie czy token jest poprawny
+  if(reqBody.token!=1234)
+  {
+    return Response.json({messege: "Niepoprawny token", result: 3}, {status: 403});
+  }
   //Sprawdzanie czy użytkownik istnieje
   const checkEmail = context.env.obstawiatorDB.prepare("SELECT name FROM Users WHERE email = ?").bind(reqBody.email);
   const checkEmailResult = await checkEmail.run();
