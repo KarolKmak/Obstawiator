@@ -14,7 +14,7 @@ export async function onRequestPost(context)
   console.log(checkResult.results);
   if(checkResult.results.length>0)
   {
-    const stmt = context.env.obstawiatorDB.prepare("SELECT UserScores.championBet, UserScores.topScorerBet, UserScores.points, Users.name FROM UserScores INNER JOIN Users ON UserScores.userID=Users.ID ORDER BY UserScores.points DESC"); 
+    const stmt = context.env.obstawiatorDB.prepare("SELECT UserScores.championBet, UserScores.topScorerBet, UserScores.points, Users.name FROM UserScores INNER JOIN Users ON UserScores.ID=Users.ID ORDER BY UserScores.points DESC");
     const returnValue = await stmt.run();
     return Response.json(returnValue.results)
   }
