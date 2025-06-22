@@ -75699,7 +75699,7 @@ ri(){var s=0,r=A.S(t.z),q=this,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b
 var $async$ri=A.O(function(a,a0){if(a===1)return A.P(a0,r)
 while(true)switch(s){case 0:g=t.N
 f=A.ae(["Content-Type","application/json"],g,g)
-e=A.azT("POST",A.h9("https://obstawiator.pages.dev/API/GetMainTable"))
+e=A.azT("POST",A.h9("https://obstawiator.pages.dev/API/getMainTable"))
 d=B.cH.mt(A.ae(["ID","0"],g,g))
 d=e.gDC().mt(d)
 e.Zv()
