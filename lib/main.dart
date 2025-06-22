@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:obstawiator/pages/start_page/login_page.dart';
 
+//***********************************************************************
+// Buduj wersję WEB poleceniem flutter pub global run peanut -b deploy_ready
+// Następnie ręcznie przenieś różnice do brancha "deploy"
+
 void main()
 {
   runApp(const MyApp());

@@ -19,7 +19,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   List<UserStandings> userStandingsTable = [];
 
-  fetchData() async
+  Future<void> fetchData() async
   {
     var headers =
     {
