@@ -9,8 +9,9 @@ export async function onRequestPost(context)
   {
     return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
   }
-  const chechUserID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
+  const checkUserID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
   const checkResult = await checkUserID.run();
+  console.log(checkResult.results);
   if(checkResult.results.length>0)
   {
     const stmt = context.env.obstawiatorDB.prepare("SELECT UserScores.championBet, UserScores.topScorerBet, UserScores.points, Users.name FROM UserScores INNER JOIN Users ON UserScores.userID=Users.ID ORDER BY UserScores.points DESC"); 
