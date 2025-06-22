@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:obstawiator/pages/start_page/login_page.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -15,16 +18,35 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _tokenController = TextEditingController();
 
-  void register() {
-    // Add your registration logic here
-    // For now, just print to console
+  Future<void> register() async {
+    var headers =
+    {
+      'Content-Type': 'application/json'
+    };
+    var url = Uri.parse("https://obstawiator.pages.dev/API/Register");
+    var request = http.Request('POST', url);
+    request.body = json.encode({"email": _emailController.text, "password": _passwordController.text, "token": _tokenController.text, "username": _usernameController.text});
+    request.headers.addAll(headers);
+    http.StreamedResponse response = await request.send();
+    if (response.statusCode == 201)
+    {
+      //get the response body as JSON
+      var jsonData = await response.stream.bytesToString();
+      print(jsonData);
+    }
+    else
+    {
+      print(response);
+    }
+
     print('Username: ${_usernameController.text}');
     print('Email: ${_emailController.text}');
     print('Password: ${_passwordController.text}');
     print('Token: ${_tokenController.text}');
   }
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)
+  {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Register'),
@@ -53,8 +75,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
+                    validator: (value)
+                    {
+                      if (value == null || value.isEmpty)
+                      {
                         return 'Please enter your username';
                       }
                       return null;
@@ -70,10 +94,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.isEmpty)
+                      {
                         return 'Please enter your email';
                       }
-                      if (!value.contains('@')) {
+                      if (!value.contains('@'))
+                      {
                         return 'Please enter a valid email';
                       }
                       return null;
@@ -88,11 +114,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       prefixIcon: Icon(Icons.lock),
                     ),
                     obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
+                    validator: (value)
+                    {
+                      if (value == null || value.isEmpty)
+                      {
                         return 'Please enter your password';
                       }
-                      if (value.length < 6) {
+                      if (value.length < 6)
+                      {
                         return 'Password must be at least 6 characters';
                       }
                       return null;
@@ -106,8 +135,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.vpn_key),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
+                    validator: (value)
+                    {
+                      if (value == null || value.isEmpty)
+                      {
                         return 'Please enter your token';
                       }
                       return null;
@@ -118,7 +149,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     width: double.infinity, // Ensure the SizedBox takes full width for centering
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
+                        if (_formKey.currentState!.validate())
+                        {
                           // If the form is valid, display a snackbar. In a real app,
                           // you'd often call a server or save the information locally.
                           register();
@@ -134,7 +166,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {
+                    onPressed: ()
+                    {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) => const LoginPage()),
                       );
