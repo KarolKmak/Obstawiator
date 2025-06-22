@@ -37,7 +37,13 @@ class _MyHomePageState extends State<MyHomePage>
       var jsonData = jsonDecode(await response.stream.bytesToString()) as List;
       for (var i=0; i<jsonData.length; i++)
       {
-        setState((){userStandingsTable.add(UserStandings(name: jsonData[i]['name'], championbet: jsonData[i]['championBet'], topscorer: jsonData[i]['topScorerBet'], points: jsonData[i]['points']));});
+        // Ensure that values are not null before adding to the table
+        String name = jsonData[i]['name'] ?? 'N/A';
+        String championBet = jsonData[i]['championBet'] ?? 'N/A';
+        String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
+        int points = jsonData[i]['points'] ?? 0;
+
+        setState((){userStandingsTable.add(UserStandings(name: name, championbet: championBet, topscorer: topScorerBet, points: points));});
       }
     }
     else
