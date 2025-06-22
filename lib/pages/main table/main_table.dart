@@ -25,7 +25,7 @@ class _MyHomePageState extends State<MyHomePage>
     {
       'Content-Type': 'application/json'
     };
-    var url = Uri.parse("https://obstawiator-api.kmak-karol98.workers.dev/getMainTable");
+    var url = Uri.parse("https://obstawiator.pages.dev/API/getMainTable");
     var request = http.Request('POST', url);
     request.body = json.encode({"ID": "0"});
     request.headers.addAll(headers);
