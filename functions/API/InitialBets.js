@@ -11,7 +11,7 @@ export async function onRequestPost(context)
     return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
   }
   const checkID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
-  const checkIDResult = await checkUser.run();
+  const checkIDResult = await checkID.run();
   if(checkIDResult.results.length>0)
   {
       const stmt = context.env.obstawiatorDB.prepare("UPDATE UserScores SET championBet = ?, topScorerBet = ? WHERE ID = ?").bind(reqBody.championBet, reqBody.topScorerBet, reqBody.ID);
