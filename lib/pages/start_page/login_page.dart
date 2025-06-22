@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
 import 'package:obstawiator/pages/start_page/registration_page.dart' as registration;
 import 'package:obstawiator/main.dart' as main;
@@ -24,37 +27,43 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  void login()
-  {
-    if (_formKey.currentState!.validate()) {
-      // Process login
-      // For now, just print to console
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
-
-      //ToDo create login function
-
-      if(false)
+  Future<void> login()
+  async {
+    if (_formKey.currentState!.validate())
+    {
+      var headers =
       {
-        final scaffold = ScaffoldMessenger.of(context);
-        scaffold.showSnackBar(
-          const SnackBar(
-            content: Text('Wrong password or email')
-          ));
+        'Content-Type': 'application/json'
+      };
+      var url = Uri.parse("https://obstawiator.pages.dev/API/Login");
+      var request = http.Request('POST', url);
+      request.body = json.encode({"email": _emailController.text, "password": _passwordController.text});
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      var result = await response.stream.bytesToString();
+      var resultJSON = json.decode(result);
+      if(response.statusCode == 200)
+      {
+        main.userID = resultJSON['userID'];
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'])),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
+        );
       }
       else
       {
-        //todo remove placeholder ID
-        main.userID = 0;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'])),
         );
       }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)
+  {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
@@ -87,7 +96,8 @@ class _LoginPageState extends State<LoginPage>
                     decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.isEmpty)
+                      {
                         return 'Please enter your password';
                       }
                       return null;
@@ -103,7 +113,8 @@ class _LoginPageState extends State<LoginPage>
                         child: const Text('Login'),
                       ),
                       TextButton(
-                        onPressed: () {
+                        onPressed: ()
+                        {
                           print('Zmiana hasła');
                         },
                         child: const Text('Forgot Password?'),
@@ -124,7 +135,8 @@ class _LoginPageState extends State<LoginPage>
   }
 
   @override
-  void dispose() {
+  void dispose()
+  {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();

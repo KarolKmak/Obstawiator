@@ -33,12 +33,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
     if (response.statusCode == 201)
     {
       var result = await response.stream.bytesToString();
-      //transorm result to JSON and print "messege"
       var resultJSON = json.decode(result);
       main.userID = resultJSON['userID'];
-      //add message to snackbar with resultJSON['messege']
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultJSON['messege'])),
+        SnackBar(content: Text(resultJSON['message'])),
       );
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
