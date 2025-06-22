@@ -9,7 +9,7 @@ export async function onRequestPost(context)
   {
     return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
   }
-  const checkUser = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE name = ? AND password = ?").bind(reqBody.name, reqBody.password);
+  const checkUser = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE email = ? AND password = ?").bind(reqBody.email, reqBody.password);
   const checkResult = await checkUser.run();
   console.log(checkResult.results);
   if(checkResult.results.length>0)
