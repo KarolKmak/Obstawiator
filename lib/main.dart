@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:obstawiator/pages/start_page/login_page.dart';
+import 'package:obstawiator/pages/start_page/initial_bets.dart';
+
 
 //***********************************************************************
 // Buduj wersję WEB poleceniem flutter pub global run peanut -b deploy_ready
@@ -8,6 +9,25 @@ import 'package:obstawiator/pages/start_page/login_page.dart';
 void main()
 {
   runApp(const MyApp());
+}
+
+AppBar titleBar()
+{
+  return AppBar(
+    title: const Text('⚽ Obstawiator ⚽'),
+    actions: <Widget>[
+      IconButton(
+        icon: const Icon(Icons.settings),
+        tooltip: 'Ustawienia',
+        onPressed: () {
+          // handle the press
+        },
+      ),
+    ],
+    backgroundColor: Colors.blueAccent,
+    foregroundColor: Colors.white,
+    centerTitle: true,
+  );
 }
 
 int ?userID;
@@ -25,7 +45,7 @@ class MyApp extends StatelessWidget
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: InitialBets(),
     );
   }
 }

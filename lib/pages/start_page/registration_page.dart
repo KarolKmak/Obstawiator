@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:obstawiator/pages/start_page/initial_bets.dart';
 import 'package:obstawiator/pages/start_page/login_page.dart';
 import 'package:obstawiator/main.dart' as main;
-import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -39,7 +39,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         SnackBar(content: Text(resultJSON['message'])),
       );
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
+        MaterialPageRoute(builder: (context) => const InitialBets()),
       );
     }
     else
@@ -52,13 +52,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
     print('Password: ${_passwordController.text}');
     print('Token: ${_tokenController.text}');
   }
-  @override
-  Widget build(BuildContext context)
+    @override
+    Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
+      appBar: main.titleBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(
@@ -69,7 +67,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   const Text(
-                    'Create Account',
+                    'Stwórz konto',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -79,7 +77,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   TextFormField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
-                      labelText: 'Username',
+                      labelText: 'Nazwa użytkownika',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person),
                     ),
@@ -87,7 +85,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     {
                       if (value == null || value.isEmpty)
                       {
-                        return 'Please enter your username';
+                        return 'Proszę podać nazwę użytkownika';
                       }
                       return null;
                     },
@@ -96,7 +94,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'E-mail',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.email),
                     ),
@@ -104,11 +102,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty)
                       {
-                        return 'Please enter your email';
+                        return 'Proszę podać adres e-mail';
                       }
                       if (!value.contains('@'))
                       {
-                        return 'Please enter a valid email';
+                        return 'Proszę podać poprawny adres e-mail';
                       }
                       return null;
                     },
@@ -117,7 +115,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
-                      labelText: 'Password',
+                      labelText: 'Hasło',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock),
                     ),
@@ -126,11 +124,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     {
                       if (value == null || value.isEmpty)
                       {
-                        return 'Please enter your password';
+                        return 'Proszę podać hasło';
                       }
                       if (value.length < 6)
                       {
-                        return 'Password must be at least 6 characters';
+                        return 'Hasło musi mieć co najmniej 6 znaków';
                       }
                       return null;
                     },
@@ -147,7 +145,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     {
                       if (value == null || value.isEmpty)
                       {
-                        return 'Please enter your token';
+                        return 'Proszę podać token';
                       }
                       return null;
                     },
@@ -162,15 +160,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           // If the form is valid, display a snackbar. In a real app,
                           // you'd often call a server or save the information locally.
                           register();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Processing Data')),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(content: Text('Przetwarzanie danych')),
+                          // );
                         }
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), // Adjust padding as needed
-                      ),
-                      child: const Text('Register'),
+                      ),child: const Text('Zarejestruj się'),
                     ),
                   ),
                   TextButton(
@@ -180,7 +177,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         MaterialPageRoute(builder: (context) => const LoginPage()),
                       );
                     },
-                    child: const Text('Already have an account? Login'),
+                    child: const Text('Masz już konto? Zaloguj się'),
                   ),
                 ],
               ),

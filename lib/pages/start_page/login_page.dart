@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage>
           SnackBar(content: Text(resultJSON['message'])),
         );
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
+          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
         );
       }
       else
@@ -65,9 +65,7 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: main.titleBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -79,26 +77,26 @@ class _LoginPageState extends State<LoginPage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
+                    controller: _passwordController,
+                    decoration: const InputDecoration(labelText: 'E-mail'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return 'Proszę podać adres e-mail';
                       }
                       if (!value.contains('@')) {
-                        return 'Please enter a valid email';
+                        return 'Proszę podać poprawny adres e-mail';
                       }
                       return null;
                     },
                   ),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
+                    decoration: const InputDecoration(labelText: 'Hasło'),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty)
                       {
-                        return 'Please enter your password';
+                        return 'Proszę podać hasło';
                       }
                       return null;
                     },
@@ -110,20 +108,20 @@ class _LoginPageState extends State<LoginPage>
                     children: [
                       ElevatedButton(
                         onPressed: login,
-                        child: const Text('Login'),
+                        child: const Text('Zaloguj się'),
                       ),
                       TextButton(
                         onPressed: ()
                         {
                           print('Zmiana hasła');
                         },
-                        child: const Text('Forgot Password?'),
+                        child: const Text('Zapomniałeś hasła?'),
                       ),
                     ],
                   ),
                   TextButton(
                     onPressed: register,
-                    child: const Text('Create New Account'),
+                    child: const Text('Stwórz nowe konto'),
                   ),
                 ],
               ),
