@@ -35,7 +35,7 @@ export async function onRequestPost(context)
   const getNewIDResult = await getNewID.run();
   const newID = getNewIDResult.results[0].ID + 1;
   //Dodawanie do bazy danych
-  const stmt = context.env.obstawiatorDB.prepare("INSERT INTO Users (ID, name, email, password) VALUES (?, ?, ?, ?)");
-  const result = await stmt.run(newID, reqBody.name, reqBody.email, reqBody.password);
+  const stmt = context.env.obstawiatorDB.prepare("INSERT INTO Users (ID, name, email, password) VALUES (?, ?, ?, ?)").bind(newID, reqBody.name, reqBody.email, reqBody.password);
+  const result = await stmt.run();
   return Response.json({messege:"Zarejestrowano użytkownika", result: 0, userID: ID}, {status: 201});
 }
