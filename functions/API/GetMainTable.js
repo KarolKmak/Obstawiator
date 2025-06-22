@@ -3,7 +3,7 @@ export async function onRequestPost(context)
   let reqBody = {};
   try
   {
-    reqBody = await request.json();
+    reqBody = await context.request.json();
   }
   catch(e)
   {
