@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:obstawiator/pages/main table/table_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:obstawiator/main.dart' as main;
 
 class MyHomePage extends StatefulWidget
 {
@@ -27,7 +28,7 @@ class _MyHomePageState extends State<MyHomePage>
     };
     var url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
     var request = http.Request('POST', url);
-    request.body = json.encode({"ID": "0"});
+    request.body = json.encode({"ID": main.userID});
     request.headers.addAll(headers);
     http.StreamedResponse response = await request.send();
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
 import 'package:obstawiator/pages/start_page/registration_page.dart' as registration;
+import 'package:obstawiator/main.dart' as main;
 
 class LoginPage extends StatefulWidget
 {
@@ -43,6 +44,8 @@ class _LoginPageState extends State<LoginPage>
       }
       else
       {
+        //todo remove placeholder ID
+        main.userID = 0;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
         );

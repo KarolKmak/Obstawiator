@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:obstawiator/pages/start_page/login_page.dart';
+import 'package:obstawiator/main.dart' as main;
+import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -30,9 +32,17 @@ class _RegistrationPageState extends State<RegistrationPage> {
     http.StreamedResponse response = await request.send();
     if (response.statusCode == 201)
     {
-      //get the response body as JSON
-      var jsonData = await response.stream.bytesToString();
-      print(jsonData);
+      var result = await response.stream.bytesToString();
+      //transorm result to JSON and print "messege"
+      var resultJSON = json.decode(result);
+      main.userID = resultJSON['userID'];
+      //add message to snackbar with resultJSON['messege']
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resultJSON['messege'])),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const main_table.MyHomePage(title: "Obstawiator")),
+      );
     }
     else
     {
