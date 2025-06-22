@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:obstawiator/pages/main table/table_data.dart';
+import 'package:obstawiator/pages/main_table/table_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
@@ -73,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage>
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: main.titleBar(),
+      appBar: main.titleBar(context),
       body: Center(
 
         child: SizedBox.expand(
@@ -87,6 +87,7 @@ class _MyHomePageState extends State<MyHomePage>
         ),
 
       ),
+      bottomNavigationBar: main.navigationBar(context),
     );
   }
 

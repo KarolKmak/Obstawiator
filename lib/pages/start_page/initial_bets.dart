@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
+import 'package:obstawiator/pages/main_table/main_table.dart' as main_table;
 
 class InitialBets extends StatefulWidget
 {
@@ -54,7 +54,7 @@ class _InitialBetsState extends State<InitialBets>
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: main.titleBar(),
+      appBar: main.titleBar(context),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

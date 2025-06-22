@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
+import 'package:obstawiator/pages/main_table/main_table.dart' as main_table;
 import 'package:obstawiator/pages/start_page/registration_page.dart' as registration;
 import 'package:obstawiator/main.dart' as main;
 
@@ -61,11 +61,18 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
+  void _handleChangePassword() {
+    // Placeholder for password change functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Funkcja zmiany hasła nie jest jeszcze zaimplementowana.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: main.titleBar(),
+      appBar: main.titleBar(context),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -77,7 +84,7 @@ class _LoginPageState extends State<LoginPage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   TextFormField(
-                    controller: _passwordController,
+                    controller: _emailController,
                     decoration: const InputDecoration(labelText: 'E-mail'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -111,10 +118,7 @@ class _LoginPageState extends State<LoginPage>
                         child: const Text('Zaloguj się'),
                       ),
                       TextButton(
-                        onPressed: ()
-                        {
-                          print('Zmiana hasła');
-                        },
+                        onPressed: _handleChangePassword,
                         child: const Text('Zapomniałeś hasła?'),
                       ),
                     ],
