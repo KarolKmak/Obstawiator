@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:obstawiator/pages/main table/main_table.dart';
+import 'package:obstawiator/pages/main table/main_table.dart' as main_table;
 
 class InitialBets extends StatefulWidget
 {
@@ -20,8 +20,32 @@ class _InitialBetsState extends State<InitialBets>
 
   Future<void> _submitBets() async
   {
-    //todo add to database
-    //printout for testing
+    var headers =
+    {
+      'Content-Type': 'application/json'
+    };
+    var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
+    var request = http.Request('POST', url);
+    request.body = json.encode({"ID": main.userID, "championBet": _championBet, "topScorerBet": _topScorerBet});
+    request.headers.addAll(headers);
+    http.StreamedResponse response = await request.send();
+    var result = await response.stream.bytesToString();
+    var resultJSON = json.decode(result);
+    if(response.statusCode == 201)
+    {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resultJSON['message'])),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+      );
+    }
+    else
+    {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resultJSON['message'])),
+      );
+    }
     print('Champion Bet: $_championBet');
     print('Top Scorer Bet: $_topScorerBet');
   }
@@ -98,7 +122,7 @@ class _InitialBetsState extends State<InitialBets>
                 child: TextButton(
                   onPressed: ()
                   {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MyHomePage()));
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const main_table.MyHomePage()));
                   },
                   child: const Text('Pomiń typowanie'),
                 ),
