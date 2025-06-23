@@ -69,7 +69,7 @@ AppBar titleBar(BuildContext context)
   );
 }
 
-int ?userID;
+int ?userID = 0;
 class MyApp extends StatelessWidget
 {
   const MyApp({super.key});
@@ -84,7 +84,7 @@ class MyApp extends StatelessWidget
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: const MyHomePage(),
     );
   }
 }

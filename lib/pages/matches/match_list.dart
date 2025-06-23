@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'dart:convert';
+import 'package:obstawiator/pages/matches/match_bets.dart';
 
 /// Represents a match between two teams.
 class Match {
-  final String ID;
+  final int ID;
   final String host;
   final String guest;
   final int? homeScore;
   final int? awayScore;
-  final String matchStart;
+  final DateTime matchStart;
   /// Creates a [Match] object.
   Match({
     required this.host,
@@ -29,7 +31,7 @@ class Match {
       guest: json['guest'],
       homeScore: json['homeScore'],
       awayScore: json['awayScore'],
-      matchStart: json['matchStart'],
+      matchStart: DateTime.fromMillisecondsSinceEpoch(json['matchStart'], isUtc: true).toLocal(),
     );
   }
 }
@@ -53,7 +55,15 @@ class _MatchListState extends State<MatchList> {
   }
 
   Future<void> _loadMatches() async {
-    final response = await http.get(Uri.parse('https://obstawiator.pages.dev/API/GetMatches'));
+    final response = await http.post(
+      Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, int?>{
+        'ID': main.userID,
+      }),
+    );
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
@@ -94,11 +104,18 @@ class _MatchListState extends State<MatchList> {
                     highlightColor: Theme.of(context).colorScheme.secondaryContainer, // Change background color on tap
                     splashColor: Colors.transparent, // Remove splash effect
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Clicked on match with ID: ${match.ID}'),
-                        ),
-                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MatchBets(
+                            host: match.host,
+                            guest: match.guest,
+                            matchStart: match.matchStart,
+                            homeScore: match.homeScore,
+                            awayScore: match.awayScore,
+                            matchID: match.ID,
+                          ),
+                        ));
                     },
                       child: ListTile(
                         title: Row(
@@ -110,7 +127,7 @@ class _MatchListState extends State<MatchList> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8.0),
                               child: Text(
-                                '${match.homeScore ?? '-'} - ${match.awayScore ?? '-'}',
+                                '${match.homeScore ?? '-'} : ${match.awayScore ?? '-'}',
                                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                               ),
                             ),
@@ -119,7 +136,7 @@ class _MatchListState extends State<MatchList> {
                             ),
                           ],
                         ),
-                        subtitle: Text('Starts at: ${match.matchStart}', textAlign: TextAlign.center),
+                        subtitle: Text('Starts at: ${DateFormat('dd/MM HH:mm').format(match.matchStart)}', textAlign: TextAlign.center),
                       ),
                     ),
                   ),
