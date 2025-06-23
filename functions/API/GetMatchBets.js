@@ -21,7 +21,7 @@ export async function onRequestPost(context)
     const getUserBet = context.env.obstawiatorDB.prepare("SELECT homeScore, awayScore FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
     const getUserBetResult = await getUserBet.run();
 
-    return Response.json({userBet: getUserBetResult.results[0], matchBets: {getMatchBetsResult.results}}), {status: 200});
+    return Response.json({userBet: getUserBetResult.results[0], matchBets: getMatchBetsResult.results}, {status: 200});
 
   }
   else
