@@ -5,31 +5,31 @@ import 'dart:convert';
 
 /// Represents a match between two teams.
 class Match {
-  final String matchID;
-  final String team1;
-  final String team2;
-  final int? score1;
-  final int? score2;
-  final DateTime startTime;
+  final String ID;
+  final String host;
+  final String guest;
+  final int? homeScore;
+  final int? awayScore;
+  final String matchStart;
   /// Creates a [Match] object.
   Match({
-    required this.team1,
-    required this.team2,
-    required this.score1,
-    required this.score2,
-    required this.startTime,
-    required this.matchID,
+    required this.host,
+    required this.guest,
+    required this.homeScore,
+    required this.awayScore,
+    required this.matchStart,
+    required this.ID,
   });
 
   /// Creates a [Match] object from a JSON map.
   factory Match.fromJson(Map<String, dynamic> json) {
     return Match(
-      matchID: json['matchID'],
-      team1: json['team1'],
-      team2: json['team2'],
-      score1: json['score1'],
-      score2: json['score2'],
-      startTime: DateTime.parse(json['startTime']),
+      ID: json['ID'],
+      host: json['host'],
+      guest: json['guest'],
+      homeScore: json['homeScore'],
+      awayScore: json['awayScore'],
+      matchStart: json['matchStart'],
     );
   }
 }
@@ -96,7 +96,7 @@ class _MatchListState extends State<MatchList> {
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Clicked on match with ID: ${match.matchID}'),
+                          content: Text('Clicked on match with ID: ${match.ID}'),
                         ),
                       );
                     },
@@ -105,21 +105,21 @@ class _MatchListState extends State<MatchList> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
                             Expanded(
-                              child: Text(match.team1, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                              child: Text(match.host, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8.0),
                               child: Text(
-                                '${match.score1 ?? '-'} - ${match.score2 ?? '-'}',
+                                '${match.homeScore ?? '-'} - ${match.awayScore ?? '-'}',
                                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                               ),
                             ),
                             Expanded(
-                              child: Text(match.team2, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                              child: Text(match.guest, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
                             ),
                           ],
                         ),
-                        subtitle: Text('Starts at: ${match.startTime.hour}:${match.startTime.minute.toString().padLeft(2, '0')}', textAlign: TextAlign.center),
+                        subtitle: Text('Starts at: ${match.matchStart}', textAlign: TextAlign.center),
                       ),
                     ),
                   ),
