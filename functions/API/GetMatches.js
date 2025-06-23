@@ -14,7 +14,7 @@ export async function onRequestPost(context)
   console.log(checkResult.results);
   if(checkResult.results.length>0)
   {
-    const stmt = context.env.obstawiatorDB.prepare("SELECT ID, matchName, matchStart FROM Matches WHERE matchFinished = 1 ORDER BY matchStart ASC LIMIT 10");
+    const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore FROM Matches WHERE matchFinished = 1 ORDER BY matchStart ASC LIMIT 10");
     const returnValue = await stmt.run();
     return Response.json(returnValue.results)
   }
