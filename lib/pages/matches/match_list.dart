@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 /// Represents a match between two teams.
 class Match {
+  final String matchID;
   final String team1;
   final String team2;
   final int? score1;
   final int? score2;
   final DateTime startTime;
-
   /// Creates a [Match] object.
   Match({
     required this.team1,
@@ -16,7 +18,20 @@ class Match {
     required this.score1,
     required this.score2,
     required this.startTime,
+    required this.matchID,
   });
+
+  /// Creates a [Match] object from a JSON map.
+  factory Match.fromJson(Map<String, dynamic> json) {
+    return Match(
+      matchID: json['matchID'],
+      team1: json['team1'],
+      team2: json['team2'],
+      score1: json['score1'],
+      score2: json['score2'],
+      startTime: DateTime.parse(json['startTime']),
+    );
+  }
 }
 
 /// A widget that displays a list of matches.
@@ -37,17 +52,23 @@ class _MatchListState extends State<MatchList> {
     _loadMatches();
   }
 
-  void _loadMatches() {
-    // Placeholder: Replace with actual data fetching logic
-    setState(() {
-      _matches = [
-        Match(team1: 'Team Alpha', team2: 'Team Bravo', score1: null, score2: null, startTime: DateTime.now().add(const Duration(hours: 2))), // Match ID: 0
-        Match(team1: 'FC Winners', team2: 'Losers United', score1: 1, score2: 1, startTime: DateTime.now().add(const Duration(days: 1))), // Match ID: 1
-        Match(team1: 'Dragons', team2: 'Knights', score1: null, score2: null, startTime: DateTime.now().add(const Duration(minutes: 30))), // Match ID: 2
-        Match(team1: 'Team X', team2: 'Team Y', score1: 5, score2: 2, startTime: DateTime.now().add(const Duration(hours: 4))), // Match ID: 3
-        Match(team1: 'Giants', team2: 'Titans', score1: 2, score2: 2, startTime: DateTime.now().add(const Duration(days: 2, hours: 1))), // Match ID: 4
-      ];
-    });
+  Future<void> _loadMatches() async {
+    final response = await http.get(Uri.parse('https://obstawiator.pages.dev/API/GetMatches'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body);
+      setState(() {
+        _matches = data.map((item) => Match.fromJson(item)).toList();
+      });
+    } else {
+      // Handle error, e.g., show a snackbar or an error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load matches')),
+        );
+      }
+      // For now, using placeholder data if API fails
+    }
   }
 
   @override
@@ -55,7 +76,7 @@ class _MatchListState extends State<MatchList> {
     return Scaffold( // Wrap with Scaffold widget
       appBar: main.titleBar(context),
       body: Material( // Wrap with Material widget
-        color: Theme.of(context).colorScheme.background, // Set background color
+        color: Theme.of(context).colorScheme.surface, // Set background color
         child: Center( // Center the ListView
           child: ListView.builder(
             shrinkWrap: true, // Make ListView take only necessary space
@@ -73,10 +94,9 @@ class _MatchListState extends State<MatchList> {
                     highlightColor: Theme.of(context).colorScheme.secondaryContainer, // Change background color on tap
                     splashColor: Colors.transparent, // Remove splash effect
                     onTap: () {
-                      // Inform the user that this functionality is under development
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('This feature is currently under development.'),
+                        SnackBar(
+                          content: Text('Clicked on match with ID: ${match.matchID}'),
                         ),
                       );
                     },
