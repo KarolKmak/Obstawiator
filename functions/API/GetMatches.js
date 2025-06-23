@@ -14,12 +14,12 @@ export async function onRequestPost(context)
   console.log(checkResult.results);
   if(checkResult.results.length>0)
   {
-    const stmt = context.env.obstawiatorDB.prepare("SELECT UserScores.championBet, UserScores.topScorerBet, UserScores.points, Users.name FROM UserScores INNER JOIN Users ON UserScores.ID=Users.ID ORDER BY UserScores.points DESC");
+    const stmt = context.env.obstawiatorDB.prepare("SELECT ID, matchName, matchStart FROM Matches WHERE matchFinished = 1 ORDER BY matchStart ASC LIMIT 10");
     const returnValue = await stmt.run();
     return Response.json(returnValue.results)
   }
   else
   {
-    return Response.json({message:"Nieznany użytkownik. Zarejestruj się, lub zaloguj na prawidłowego użytkownika"}, {status: 401});
+    return Response.json({message:"Nieznany użytkownik. Zarejestruj się, lub zaloguj na prawidłowego użytkownika"}, {status: 403});
   }
 }
