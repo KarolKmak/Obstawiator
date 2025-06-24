@@ -216,20 +216,29 @@ class _MyHomePageState extends State<MyHomePage>
           ? Colors.blue.withOpacity(0.1) // Light blue for user row
           : (userStandingsTable.indexOf(e) % 2 == 0 ? Colors.grey.withOpacity(0.1) : null); // Light grey for even rows
 
-      return DataRow(
-        color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
-        cells: [
-          DataCell(Text(e.name)),
-          DataCell(Text(e.championbet)),
-          DataCell(Text(e.topscorer)),
-          DataCell(Text(e.points.toString())),
-        ],
-        onSelectChanged: (isSelected) {
-          if (isSelected != null) { // Removed isSelected check as it's not needed without checkboxes
-            _handleRowTap(e.ID);
+      DataRow rowWidget = DataRow(
+          color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
+          cells: [
+            DataCell(Text(e.name)),
+            DataCell(Text(e.championbet)),
+            DataCell(Text(e.topscorer)),
+            DataCell(Text(e.points.toString())),
+          ],
+          onSelectChanged: (isSelected) {
+            if (isSelected != null) { // Removed isSelected check as it's not needed without checkboxes
+              _handleRowTap(e.ID);
+            }
+          },
+        );
+
+      if (isUserRow) {
+        return DataRow(
+          cells: rowWidget.cells.map((cell) => DataCell(Tooltip(message: 'Kliknij, aby edytować swoje typy', child: cell.child))).toList(),
+          onSelectChanged: rowWidget.onSelectChanged,
+          color: rowWidget.color,
+        );
           }
-        },
-      );
+      return rowWidget;
     }).toList();
   }
 }
