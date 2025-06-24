@@ -69,7 +69,7 @@ AppBar titleBar(BuildContext context)
   );
 }
 
-int ?userID = 0;
+int ?userID;
 class MyApp extends StatelessWidget
 {
   const MyApp({super.key});
