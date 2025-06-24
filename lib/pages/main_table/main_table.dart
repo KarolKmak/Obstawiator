@@ -21,6 +21,10 @@ class _MyHomePageState extends State<MyHomePage>
 
   Future<void> fetchData() async
   {
+    // Clear existing data before fetching new data
+    setState(() {
+      userStandingsTable.clear();
+    });
     var headers =
     {
       'Content-Type': 'application/json'
@@ -36,13 +40,13 @@ class _MyHomePageState extends State<MyHomePage>
       var jsonData = jsonDecode(await response.stream.bytesToString()) as List;
       for (var i=0; i<jsonData.length; i++)
       {
+        int id = jsonData[i]['ID'] ?? 'N/A';
         // Ensure that values are not null before adding to the table
         String name = jsonData[i]['name'] ?? 'N/A';
         String championBet = jsonData[i]['championBet'] ?? 'N/A';
         String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
         int points = jsonData[i]['points'] ?? 0;
-
-        setState((){userStandingsTable.add(UserStandings(name: name, championbet: championBet, topscorer: topScorerBet, points: points));});
+        setState((){userStandingsTable.add(UserStandings(ID: id, name: name, championbet: championBet, topscorer: topScorerBet, points: points));});
       }
     }
     else
@@ -81,6 +85,7 @@ class _MyHomePageState extends State<MyHomePage>
             scrollDirection: Axis.vertical,
             child: DataTable(
                 columns: _createColumns(),
+                showCheckboxColumn: false, // Add this line
                 rows: _createRows()
             ),
           ),
@@ -89,6 +94,107 @@ class _MyHomePageState extends State<MyHomePage>
       ),
       bottomNavigationBar: main.navigationBar(context),
     );
+  }
+
+  void _handleRowTap(int id) {
+    if (kDebugMode) {
+      print('Row with ID $id was tapped. UserID is ${main.userID}');
+    }
+    if (id == main.userID) {
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) {
+          // Find the current user's data
+          final currentUserData = userStandingsTable.firstWhere((user) => user.ID == main.userID);
+          final TextEditingController championController = TextEditingController(text: currentUserData.championbet);
+          final TextEditingController topScorerController = TextEditingController(text: currentUserData.topscorer);
+
+          return AlertDialog(
+            title: const Text('Zmień typy'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                TextField(
+                  controller: championController,
+                  decoration: const InputDecoration(labelText: 'Mistrz'),
+                ),
+                TextField(
+                  controller: topScorerController,
+                  decoration: const InputDecoration(labelText: 'Król strzelców'),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Anuluj'),
+                onPressed: () {
+                  // Dispose controllers when dialog is dismissed
+                  championController.dispose();
+                  topScorerController.dispose();
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: const Text('Zapisz'),
+                onPressed: () async {
+                  final String championBet = championController.text;
+                  final String topScorerBet = topScorerController.text;
+
+                  if (championBet.isEmpty || topScorerBet.isEmpty) {
+                    // Show an error or prevent closing if fields are empty
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Oba pola muszą być wypełnione!')),
+                    );
+                    return;
+                  }
+
+                  var headers = {
+                    'Content-Type': 'application/json'
+                  };
+                  var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
+                  var request = http.Request('POST', url);
+                  request.body = json.encode({
+                    "ID": main.userID,
+                    "championBet": championBet,
+                    "topScorerBet": topScorerBet
+                  });
+                  request.headers.addAll(headers);
+
+                  http.StreamedResponse response = await request.send();
+
+                  if (response.statusCode == 201) {
+                    final responseBody = await response.stream.bytesToString();
+                    final decodedBody = jsonDecode(responseBody);
+                    final message = decodedBody['message'] ?? 'Zapisano pomyślnie!'; // Default message if not provided
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+
+                    // Optionally, refresh data or show success message
+                    fetchData(); // Refresh the table data
+                    championController.dispose();
+                    topScorerController.dispose();
+                    Navigator.of(context).pop();
+                  } else {
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Błąd zapisu: ${response.reasonPhrase}')),
+                    );
+                    // Optionally, keep the dialog open or handle the error in another way
+                    // For now, we'll still dispose controllers and pop the dialog
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      if (kDebugMode) {
+        print("Row ID: $id does not match UserID: ${main.userID}");
+      }
+    }
   }
 
   List<DataColumn> _createColumns()
@@ -105,14 +211,25 @@ class _MyHomePageState extends State<MyHomePage>
   {
     return userStandingsTable.map((e)
     {
-      return DataRow(cells: [
-        DataCell(Text(e.name)),
-        DataCell(Text(e.championbet)),
-        DataCell(Text(e.topscorer)),
-        DataCell(Text(e.points.toString()))
-      ]
-      );
+      final bool isUserRow = e.ID == main.userID;
+      final Color? rowColor = isUserRow
+          ? Colors.blue.withOpacity(0.1) // Light blue for user row
+          : (userStandingsTable.indexOf(e) % 2 == 0 ? Colors.grey.withOpacity(0.1) : null); // Light grey for even rows
 
+      return DataRow(
+        color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
+        cells: [
+          DataCell(Text(e.name)),
+          DataCell(Text(e.championbet)),
+          DataCell(Text(e.topscorer)),
+          DataCell(Text(e.points.toString())),
+        ],
+        onSelectChanged: (isSelected) {
+          if (isSelected != null) { // Removed isSelected check as it's not needed without checkboxes
+            _handleRowTap(e.ID);
+          }
+        },
+      );
     }).toList();
   }
 }
