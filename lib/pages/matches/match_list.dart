@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:obstawiator/pages/matches/match_bets.dart';
 
-/// Represents a match between two teams.
+/// Reprezentuje mecz pomiędzy dwiema drużynami.
 class Match {
   final int ID;
   final String host;
@@ -13,7 +13,7 @@ class Match {
   final int? homeScore;
   final int? awayScore;
   final DateTime matchStart;
-  /// Creates a [Match] object.
+  /// Tworzy obiekt [Match].
   Match({
     required this.host,
     required this.guest,
@@ -23,7 +23,7 @@ class Match {
     required this.ID,
   });
 
-  /// Creates a [Match] object from a JSON map.
+  /// Tworzy obiekt [Match] z mapy JSON.
   factory Match.fromJson(Map<String, dynamic> json) {
     return Match(
       ID: json['ID'],
@@ -36,11 +36,11 @@ class Match {
   }
 }
 
-/// A widget that displays a list of matches.
+/// Widżet wyświetlający listę meczów.
 class MatchList extends StatefulWidget {
   const MatchList({super.key});
 
-  /// Creates a new [MatchList] widget.
+  /// Tworzy nowy widżet [MatchList].
   @override
   State<MatchList> createState() => _MatchListState();
 }
@@ -71,10 +71,10 @@ class _MatchListState extends State<MatchList> {
         _matches = data.map((item) => Match.fromJson(item)).toList();
       });
     } else {
-      // Handle error, e.g., show a snackbar or an error message
+      // Obsługa błędu, np. wyświetlenie snackbara lub komunikatu o błędzie
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load matches')),
+          const SnackBar(content: Text('Nie udało się załadować meczów')),
         );
       }
       // For now, using placeholder data if API fails
@@ -83,26 +83,26 @@ class _MatchListState extends State<MatchList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold( // Wrap with Scaffold widget
+    return Scaffold( // Opakowanie widżetem Scaffold
       appBar: main.titleBar(context),
-      body: Material( // Wrap with Material widget
-        color: Theme.of(context).colorScheme.surface, // Set background color
-        child: Center( // Center the ListView
+      body: Material( // Opakowanie widżetem Material
+        color: Theme.of(context).colorScheme.surface, // Ustawienie koloru tła
+        child: Center( // Wyśrodkowanie ListView
           child: ListView.builder(
-            shrinkWrap: true, // Make ListView take only necessary space
+            shrinkWrap: true, // ListView zajmuje tylko niezbędne miejsce
             itemCount: _matches.length,
             itemBuilder: (context, index) {
               final match = _matches[index];
-              return Center( // Center each Card
+              return Center( // Wyśrodkowanie każdej karty
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.5, // 50% of screen width
-                  constraints: const BoxConstraints(minWidth: 300), // Minimum width for content
-                  child: Card( // Use Card for a better visual representation of a tile
+                  width: MediaQuery.of(context).size.width * 0.5, // 50% szerokości ekranu
+                  constraints: const BoxConstraints(minWidth: 300), // Minimalna szerokość zawartości
+                  child: Card( // Użycie Card dla lepszej wizualnej reprezentacji kafelka
                     margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    clipBehavior: Clip.antiAlias, // Add this line to ensure content respects Card's rounded corners
-                    child: InkWell( // Wrap ListTile with InkWell to make it clickable
-                    highlightColor: Theme.of(context).colorScheme.secondaryContainer, // Change background color on tap
-                    splashColor: Colors.transparent, // Remove splash effect
+                    clipBehavior: Clip.antiAlias, // Ta linia zapewnia, że zawartość respektuje zaokrąglone rogi Card
+                    child: InkWell( // Opakowanie ListTile widżetem InkWell, aby uczynić go klikalnym
+                    highlightColor: Theme.of(context).colorScheme.secondaryContainer, // Zmiana koloru tła po kliknięciu
+                    splashColor: Colors.transparent, // Usunięcie efektu plusku
                     onTap: () {
                       Navigator.push(
                         context,
@@ -136,7 +136,7 @@ class _MatchListState extends State<MatchList> {
                             ),
                           ],
                         ),
-                        subtitle: Text('Starts at: ${DateFormat('dd/MM HH:mm').format(match.matchStart)}', textAlign: TextAlign.center),
+                        subtitle: Text('Początek o: ${DateFormat('dd/MM HH:mm').format(match.matchStart)}', textAlign: TextAlign.center),
                       ),
                     ),
                   ),

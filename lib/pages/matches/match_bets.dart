@@ -110,29 +110,29 @@ class _MatchBetsState extends State<MatchBets> {
         TextEditingController homeScoreController = TextEditingController();
         TextEditingController awayScoreController = TextEditingController();
         return AlertDialog(
-          title: Text('Place Your Bet'),
+          title: Text('Obstaw zakład'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               TextField(
                 controller: homeScoreController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Home Score'),
+                decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
               ),
               TextField(
                 controller: awayScoreController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Away Score'),
+                decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
               ),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: Text('Anuluj'),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: Text('Submit'),
+              child: Text('Zatwierdź'),
               onPressed: () {
                 final homeScore = homeScoreController.text;
                 final awayScore = awayScoreController.text;
@@ -214,7 +214,7 @@ class _MatchBetsState extends State<MatchBets> {
             const SizedBox(height: 20),
             Center( // Center the Tile horizontally
               child: Tooltip(
-                message: 'Click to add/change your bet', // Tooltip message
+                message: 'Kliknij, aby dodać/zmienić swój zakład', // Tooltip message
                 child: Card( // Use Card for tile appearance
                   elevation: 4.0, // Add some shadow for depth
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)), // Added rounded corners
@@ -228,7 +228,7 @@ class _MatchBetsState extends State<MatchBets> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'My Bet: ${userBet ?? "Not placed"}', // Display user's bet or "Not placed"
+                            'Mój zakład: ${userBet ?? "Nie obstawiono"}', // Display user's bet or "Not placed"
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           if (showWarning)
@@ -245,7 +245,7 @@ class _MatchBetsState extends State<MatchBets> {
             ),
             const SizedBox(height: 20),
             const Divider(),
-            Text('Other Users\' Bets:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Zakłady innych użytkowników:', style: Theme.of(context).textTheme.titleMedium),
             Expanded(
               child: ListView.builder(
                 itemCount: otherUsersBetsData.length,
