@@ -79,7 +79,9 @@ class _LoginPageState extends State<LoginPage>
           key: _formKey,
           child: Center(
             child: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.4, // 40% of screen width
+              width: MediaQuery.of(context).size.height > MediaQuery.of(context).size.width
+                  ? MediaQuery.of(context).size.width // Use full width if height > width
+                  : MediaQuery.of(context).size.width * 0.4, // 40% of screen width
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[

@@ -30,14 +30,14 @@ class Match {
   /// Tworzy obiekt [Match] z mapy JSON.
   factory Match.fromJson(Map<String, dynamic> json) {
     return Match(
-      ID: json['ID'],
+      ID: json['ID'] ?? 0, // Provide a default value if ID is null
       host: json['host'],
       guest: json['guest'],
       homeScore: json['homeScore'],
-      awayScore: json['awayScore'],
+      awayScore: json['awayScore'], // Ensure this matches the JSON key
       matchStart: DateTime.fromMillisecondsSinceEpoch(json['matchStart'], isUtc: true).toLocal(),
       betVisible: json['betVisible'],
-      // hasBet will be updated later
+      // hasBet will be updated later,
     );
   }
 
@@ -69,6 +69,7 @@ class MatchList extends StatefulWidget {
 
 class _MatchListState extends State<MatchList> {
   List<Match> _matches = [];
+  List<Match> _finishedMatches = [];
   int _finishedMatchesOffset = 0;
   bool _showLoadMoreButton = true;
 
@@ -80,32 +81,36 @@ class _MatchListState extends State<MatchList> {
 
   Future<void> _checkBetsForMatches(List<Match> matches) async {
     for (var match in matches) {
-      final response = await http.post(
-        Uri.parse('https://obstawiator.pages.dev/API/IsMyBetPlaced'), // Corrected API endpoint
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, int?>{
-          'matchID': match.ID,
-          'ID': main.userID,
-        }),
-      );
+      // Only check if the bet was placed if the match start time is the same as the current date.
+      final now = DateTime.now();
+      if (match.matchStart.year == now.year && match.matchStart.month == now.month && match.matchStart.day == now.day) {
+        final response = await http.post(
+          Uri.parse('https://obstawiator.pages.dev/API/IsMyBetPlaced'), // Corrected API endpoint
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, int?>{
+            'matchID': match.ID,
+            'ID': main.userID,
+          }),
+        );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        // Check if data is a list and not empty
-        if (data is List && data.isNotEmpty) {
-          // Assuming the relevant bet information is in the first element of the list
-          // and the key for the bet is 'userBet'.
-          match.hasBet = data[0]['userBetHome'] != null || data[0]['userBetAway'] != null;
-        } else if (data is Map<String, dynamic>) { // Check if data is a map
-          match.hasBet = data['userBet'] != null;
-        }
-      } else {
-        final responseData = jsonDecode(response.body);
-        final message = responseData['message'] ?? 'Nie udało się sprawdzić zakładu dla meczu ${match.ID}';
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          // Check if data is a list and not empty
+          if (data is List && data.isNotEmpty) {
+            // Assuming the relevant bet information is in the first element of the list
+            // and the key for the bet is 'userBet'.
+            match.hasBet = data[0]['userBetHome'] != null || data[0]['userBetAway'] != null;
+          } else if (data is Map<String, dynamic>) { // Check if data is a map
+            match.hasBet = data['userBet'] != null;
+          }
+        } else {
+          final responseData = jsonDecode(response.body);
+          final message = responseData['message'] ?? 'Nie udało się sprawdzić zakładu dla meczu ${match.ID}';
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          }
         }
       }
     }
@@ -161,24 +166,17 @@ class _MatchListState extends State<MatchList> {
       // ignore: avoid_print
       print('Received data for finished matches: $data');
       setState(() {
-        // ignore: avoid_print
-        print('Current matches count before adding: ${_matches.length}');
-        final loadedMatches = data.map((item) => Match.fromJson(item)).toList();
-        if (loadedMatches.isEmpty) {
+        if (data.isEmpty) {
           _showLoadMoreButton = false;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Nie ma więcej zakończonych meczów do załadowania')),
-          );
-        } else if (loadedMatches.length < 10) {
-          _showLoadMoreButton = false;
-        }
-        _matches.addAll(loadedMatches);
-        _finishedMatchesOffset += loadedMatches.length;
+        } // No new matches to add
+        final newMatches = data.map((item) => Match.fromJson(item)).toList();
+        _finishedMatches.addAll(newMatches);
+        _finishedMatchesOffset += newMatches.length;
         // ignore: avoid_print
-        print('Current matches count after adding: ${_matches.length}');
+        print('Current finished matches count after adding: ${_finishedMatches.length}');
         // ignore: avoid_print
         print('New finished matches offset: $_finishedMatchesOffset');
-        _checkBetsForMatches(_matches); // Check bets after loading matches
+        _checkBetsForMatches(_finishedMatches); // Check bets after loading finished matches
       });
     } else {
       // ignore: avoid_print
@@ -200,14 +198,19 @@ class _MatchListState extends State<MatchList> {
         color: Theme.of(context).colorScheme.surface, // Ustawienie koloru tła
         child: Center( // Wyśrodkowanie ListView
           child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _matches.length,
+            // shrinkWrap: true, // Usunięcie shrinkWrap, aby umożliwić przewijanie w przypadku dużej liczby elementów
+            itemCount: _matches.length + _finishedMatches.length,
             itemBuilder: (context, index) {
-              final match = _matches[index];
+              final match = index < _matches.length ? _matches[index] : _finishedMatches[index - _matches.length];
+              // Sprawdzenie orientacji ekranu
+              final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+              // Szerokość kontenera dostosowana do orientacji
+              final containerWidth = isPortrait ? MediaQuery.of(context).size.width * 0.9 : MediaQuery.of(context).size.width * 0.5; // Zmienione z 0.5 na 0.9 dla portretu
+
               final exclamationColor = match.getExclamationMarkColor();
               return Center( // Wyśrodkowanie każdej karty
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.5, // 50% szerokości ekranu
+                  width: containerWidth, // Użycie zdefiniowanej szerokości
                   constraints: const BoxConstraints(minWidth: 300), // Minimalna szerokość zawartości
                   child: Card( // Użycie Card dla lepszej wizualnej reprezentacji kafelka
                     margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -287,7 +290,7 @@ class _MatchListState extends State<MatchList> {
           : Padding( // Added padding for better visual spacing
         padding: const EdgeInsets.all(16.0),
         child: Text(
-          _matches.isEmpty && !_showLoadMoreButton ? 'Nie ma więcej zakończonych meczów do załadowania' : '',
+          _matches.isEmpty && _finishedMatches.isEmpty && !_showLoadMoreButton ? 'Nie ma więcej zakończonych meczów do załadowania' : '',
           textAlign: TextAlign.center,
         ),
       ),
