@@ -13,6 +13,8 @@ class Match {
   final int? homeScore;
   final int? awayScore;
   final DateTime matchStart;
+  final int betVisible;
+  bool hasBet; // Placeholder for bet status
   /// Tworzy obiekt [Match].
   Match({
     required this.host,
@@ -21,6 +23,8 @@ class Match {
     required this.awayScore,
     required this.matchStart,
     required this.ID,
+    required this.betVisible,
+    this.hasBet = false, // Default to false
   });
 
   /// Tworzy obiekt [Match] z mapy JSON.
@@ -32,7 +36,25 @@ class Match {
       homeScore: json['homeScore'],
       awayScore: json['awayScore'],
       matchStart: DateTime.fromMillisecondsSinceEpoch(json['matchStart'], isUtc: true).toLocal(),
+      betVisible: json['betVisible'],
+      // hasBet will be updated later
     );
+  }
+
+  /// Returns the color for the exclamation mark based on the match start time.
+  Color? getExclamationMarkColor() {
+    final now = DateTime.now();
+    final difference = matchStart.difference(now);
+
+    if (matchStart.day == now.day && matchStart.month == now.month && matchStart.year == now.year) {
+      if (difference.inHours < 2) {
+        return Colors.red;
+      } else if (difference.inHours < 8) {
+        return Colors.yellow;
+      }
+      return Colors.grey;
+    }
+    return null; // No mark if not today
   }
 }
 
@@ -47,11 +69,47 @@ class MatchList extends StatefulWidget {
 
 class _MatchListState extends State<MatchList> {
   List<Match> _matches = [];
+  int _finishedMatchesOffset = 0;
+  bool _showLoadMoreButton = true;
 
   @override
   void initState() {
     super.initState();
     _loadMatches();
+  }
+
+  Future<void> _checkBetsForMatches(List<Match> matches) async {
+    for (var match in matches) {
+      final response = await http.post(
+        Uri.parse('https://obstawiator.pages.dev/API/IsMyBetPlaced'), // Corrected API endpoint
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, int?>{
+          'matchID': match.ID,
+          'ID': main.userID,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Check if data is a list and not empty
+        if (data is List && data.isNotEmpty) {
+          // Assuming the relevant bet information is in the first element of the list
+          // and the key for the bet is 'userBet'.
+          match.hasBet = data[0]['userBetHome'] != null || data[0]['userBetAway'] != null;
+        } else if (data is Map<String, dynamic>) { // Check if data is a map
+          match.hasBet = data['userBet'] != null;
+        }
+      } else {
+        final responseData = jsonDecode(response.body);
+        final message = responseData['message'] ?? 'Nie udało się sprawdzić zakładu dla meczu ${match.ID}';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        }
+      }
+    }
+    setState(() {}); // Update the UI after checking bets
   }
 
   Future<void> _loadMatches() async {
@@ -64,14 +122,67 @@ class _MatchListState extends State<MatchList> {
         'ID': main.userID,
       }),
     );
-
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
       setState(() {
-        _matches = data.map((item) => Match.fromJson(item)).toList();
+        final loadedMatches = data.map((item) => Match.fromJson(item)).toList();
+        _matches = loadedMatches;
+        _checkBetsForMatches(_matches); // Check bets after loading matches
       });
     } else {
       // Obsługa błędu, np. wyświetlenie snackbara lub komunikatu o błędzie
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie udało się załadować meczów')),
+        );
+      }
+      // For now, using placeholder data if API fails
+    }
+  }
+
+  Future<void> _loadFinishedMatches() async {
+    // ignore: avoid_print
+    print('Loading finished matches with offset: $_finishedMatchesOffset');
+    final response = await http.post(
+      Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, int?>{
+        // ignore: unnecessary_string_interpolations
+        // ignore: avoid_print
+        'ID': main.userID,
+        'finishedMatchesOffset': _finishedMatchesOffset,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body);
+      // ignore: avoid_print
+      print('Received data for finished matches: $data');
+      setState(() {
+        // ignore: avoid_print
+        print('Current matches count before adding: ${_matches.length}');
+        final loadedMatches = data.map((item) => Match.fromJson(item)).toList();
+        if (loadedMatches.isEmpty) {
+          _showLoadMoreButton = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nie ma więcej zakończonych meczów do załadowania')),
+          );
+        } else if (loadedMatches.length < 10) {
+          _showLoadMoreButton = false;
+        }
+        _matches.addAll(loadedMatches);
+        _finishedMatchesOffset += loadedMatches.length;
+        // ignore: avoid_print
+        print('Current matches count after adding: ${_matches.length}');
+        // ignore: avoid_print
+        print('New finished matches offset: $_finishedMatchesOffset');
+        _checkBetsForMatches(_matches); // Check bets after loading matches
+      });
+    } else {
+      // ignore: avoid_print
+      print('Failed to load finished matches: ${response.statusCode}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Nie udało się załadować meczów')),
@@ -89,10 +200,11 @@ class _MatchListState extends State<MatchList> {
         color: Theme.of(context).colorScheme.surface, // Ustawienie koloru tła
         child: Center( // Wyśrodkowanie ListView
           child: ListView.builder(
-            shrinkWrap: true, // ListView zajmuje tylko niezbędne miejsce
+            shrinkWrap: true,
             itemCount: _matches.length,
             itemBuilder: (context, index) {
               final match = _matches[index];
+              final exclamationColor = match.getExclamationMarkColor();
               return Center( // Wyśrodkowanie każdej karty
                 child: Container(
                   width: MediaQuery.of(context).size.width * 0.5, // 50% szerokości ekranu
@@ -114,6 +226,7 @@ class _MatchListState extends State<MatchList> {
                             homeScore: match.homeScore,
                             awayScore: match.awayScore,
                             matchID: match.ID,
+                            betVisible: match.betVisible,
                           ),
                         ));
                     },
@@ -121,11 +234,20 @@ class _MatchListState extends State<MatchList> {
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
+                            if (exclamationColor != null && !match.hasBet)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Icon(Icons.warning_amber_rounded, color: exclamationColor, size: 24),
+                              )
+                            else if (exclamationColor != null && match.hasBet) // Keep spacing consistent
+                              const SizedBox(width: 32), // Icon width + padding
+
                             Expanded(
                               child: Text(match.host, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8.0),
+
                               child: Text(
                                 '${match.homeScore ?? '-'} : ${match.awayScore ?? '-'}',
                                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
@@ -134,6 +256,12 @@ class _MatchListState extends State<MatchList> {
                             Expanded(
                               child: Text(match.guest, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
                             ),
+                            if (exclamationColor != null && !match.hasBet) // Invisible placeholder to balance layout if no icon on left
+                              const SizedBox(width: 32)
+                            else if (exclamationColor == null) // If no icon at all, add some padding
+                              const SizedBox(width: 16),
+
+
                           ],
                         ),
                         subtitle: Text('Początek o: ${DateFormat('dd/MM HH:mm').format(match.matchStart)}', textAlign: TextAlign.center),
@@ -143,8 +271,24 @@ class _MatchListState extends State<MatchList> {
                 ),
               );
             },
-
           ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: _showLoadMoreButton
+          ? FloatingActionButton.extended(
+              onPressed: _loadFinishedMatches,
+              label: const Text('Załaduj zakończone mecze'),
+              icon: const Icon(Icons.download),
+            )
+          : null,
+      bottomSheet: _showLoadMoreButton
+          ? null // Hide if button is shown
+          : Padding( // Added padding for better visual spacing
+        padding: const EdgeInsets.all(16.0),
+        child: Text(
+          _matches.isEmpty && !_showLoadMoreButton ? 'Nie ma więcej zakończonych meczów do załadowania' : '',
+          textAlign: TextAlign.center,
         ),
       ),
       bottomNavigationBar: main.navigationBar(context),

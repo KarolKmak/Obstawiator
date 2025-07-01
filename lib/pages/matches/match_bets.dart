@@ -11,6 +11,7 @@ class MatchBets extends StatefulWidget {
   final DateTime matchStart;
   final int? homeScore;
   final int? awayScore;
+  final int betVisible;
   MatchBets({
     super.key,
     required this.matchID,
@@ -19,8 +20,9 @@ class MatchBets extends StatefulWidget {
     required this.matchStart,
     this.homeScore,
     this.awayScore,
+    required this.betVisible,
   })  : otherUsersBetsData = [],
-        userBetData = null; // Removed const from constructor
+        userBetData = null;
 
   Map<String, dynamic>? userBetData;
   List<Map<String, dynamic>> otherUsersBetsData = [];
@@ -36,7 +38,7 @@ class _MatchBetsState extends State<MatchBets> {
   @override
   void initState() {
     super.initState();
-    fetchMatchBets(); // Call fetchMatchBets when the widget is initialized
+    fetchMatchBets();
   }
 
   Future<void> fetchMatchBets() async {
@@ -154,8 +156,8 @@ class _MatchBetsState extends State<MatchBets> {
         : null; // Null if no bet, otherwise the bet string.
 
     final timeToMatch = widget.matchStart.difference(DateTime.now());
-    // Show warning if no bet is placed and the match is less than 2 hours away, but not if it's less than 10 minutes away
-    final bool showWarning = userBet == null && timeToMatch.inHours < 2 && timeToMatch.inMinutes > 10;
+    // Show warning if no bet is placed and the match is less than 2 hours away, but not if it's less than 0 minutes away
+    final bool showWarning = userBet == null && timeToMatch.inHours < 2 && timeToMatch.inMinutes > 0;
     return Scaffold(
       appBar: main.titleBar(context),
       bottomNavigationBar: main.navigationBar(context),
@@ -246,29 +248,78 @@ class _MatchBetsState extends State<MatchBets> {
             const SizedBox(height: 20),
             const Divider(),
             Text('Zakłady innych użytkowników:', style: Theme.of(context).textTheme.titleMedium),
-            Expanded(
-              child: ListView.builder(
-                itemCount: otherUsersBetsData.length,
-                itemBuilder: (context, index) {
-                  final betData = otherUsersBetsData[index];
-                  final name = betData['name'] as String;
-                  final homeScore = betData['homeScore'] as int?;
-                  final awayScore = betData['awayScore'] as int?;
-                  final betDisplay = '$name: ${homeScore ?? '-'} : ${awayScore ?? '-'}';
-                  return Align( // Align the Card to the center
-                    alignment: Alignment.center,
-                    child: Card(
-                      elevation: 2.0,
-                      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                      child: Padding( // Add padding inside the Card
-                        padding: const EdgeInsets.all(8.0), // Adjust padding as needed
-                        child: Text(betDisplay, textAlign: TextAlign.center),
-                      ),
+            const SizedBox(height: 10),
+            if (widget.betVisible == 1 || (widget.betVisible == 0 && widget.matchStart.isBefore(DateTime.now())))
+              Expanded(
+                child: SingleChildScrollView( // Added SingleChildScrollView for vertical scrolling if needed
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add horizontal padding
+                    child: Table(
+                      columnWidths: {
+                        0: FlexColumnWidth(),
+                        1: FixedColumnWidth(100.0), // Width for bet
+                        if (widget.homeScore != null) 2: FixedColumnWidth(80.0), // Width for points, if shown
+                      },
+                      border: TableBorder.all(color: Colors.grey.shade300, width: 1), // Add border to table
+                      children: [
+                        TableRow(
+                          decoration: BoxDecoration(color: Colors.blueGrey[50]), // Header row background
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text('Użytkownik', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text('Zakład', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                            ),
+                            if (widget.homeScore != null) // Conditionally add Points cell
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text('Punkty', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                              ),
+                          ],
+                        ),
+                        ...otherUsersBetsData.map((betData) {
+                          final name = betData['name'] as String;
+                          final homeScore = betData['homeScore'] as int?;
+                          final awayScore = betData['awayScore'] as int?;
+                          final points = betData['points'] as int?; // Assuming 'points' field exists
+                          final betDisplay = '${homeScore ?? '-'} : ${awayScore ?? '-'}';
+                          return TableRow(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(name),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(betDisplay, textAlign: TextAlign.center),
+                              ),
+                              if (widget.homeScore != null) // Conditionally add Points cell
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(points?.toString() ?? '-', textAlign: TextAlign.center),
+                                ),
+                            ],
+                          );
+                        }).toList(),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    'Zakłady innych użytkowników będą widoczne po rozpoczęciu meczu.',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-            ),
           ],
                         ),
       ),

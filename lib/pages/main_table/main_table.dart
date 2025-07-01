@@ -201,6 +201,7 @@ class _MyHomePageState extends State<MyHomePage>
   {
     return
       [
+        const DataColumn(label: Text("Miejsce")),
         const DataColumn(label: Text("Gracz")),
         const DataColumn(label: Text("Mistrz")),
         const DataColumn(label: Text("Król strzelców")),
@@ -209,16 +210,22 @@ class _MyHomePageState extends State<MyHomePage>
   }
   List<DataRow> _createRows()
   {
-    return userStandingsTable.map((e)
+    // Sort userStandingsTable by points in descending order before mapping to rows
+    List<UserStandings> sortedStandings = List.from(userStandingsTable)..sort((a, b) => b.points.compareTo(a.points));
+
+    return sortedStandings.asMap().entries.map((entry)
     {
+      int index = entry.key;
+      UserStandings e = entry.value;
       final bool isUserRow = e.ID == main.userID;
       final Color? rowColor = isUserRow
           ? Colors.blue.withOpacity(0.1) // Light blue for user row
-          : (userStandingsTable.indexOf(e) % 2 == 0 ? Colors.grey.withOpacity(0.1) : null); // Light grey for even rows
+          : (index % 2 == 0 ? Colors.grey.withOpacity(0.1) : null); // Light grey for even rows
 
       DataRow rowWidget = DataRow(
           color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
           cells: [
+            DataCell(Text((index + 1).toString())), // Displaying the rank (index + 1)
             DataCell(Text(e.name)),
             DataCell(Text(e.championbet)),
             DataCell(Text(e.topscorer)),
