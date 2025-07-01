@@ -27,7 +27,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     };
     var url = Uri.parse("https://obstawiator.pages.dev/API/Register");
     var request = http.Request('POST', url);
-    request.body = json.encode({"email": _emailController.text, "password": _passwordController.text, "token": _tokenController.text, "name": _usernameController.text});
+    request.body = json.encode({"email": _emailController.text.toLowerCase(), "password": _passwordController.text, "token": _tokenController.text, "name": _usernameController.text});
     request.headers.addAll(headers);
     http.StreamedResponse response = await request.send();
     if (response.statusCode == 201)
@@ -44,13 +44,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
     }
     else
     {
-      print(response);
     }
 
-    print('Username: ${_usernameController.text}');
-    print('Email: ${_emailController.text}');
-    print('Password: ${_passwordController.text}');
-    print('Token: ${_tokenController.text}');
   }
     @override
     Widget build(BuildContext context)

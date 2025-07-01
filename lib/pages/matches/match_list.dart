@@ -46,7 +46,7 @@ class Match {
     final now = DateTime.now();
     final difference = matchStart.difference(now);
 
-    if (matchStart.day == now.day && matchStart.month == now.month && matchStart.year == now.year) {
+    if (matchStart.isAfter(now) && matchStart.day == now.day && matchStart.month == now.month && matchStart.year == now.year) {
       if (difference.inHours < 2) {
         return Colors.red;
       } else if (difference.inHours < 8) {
@@ -83,7 +83,8 @@ class _MatchListState extends State<MatchList> {
     for (var match in matches) {
       // Only check if the bet was placed if the match start time is the same as the current date.
       final now = DateTime.now();
-      if (match.matchStart.year == now.year && match.matchStart.month == now.month && match.matchStart.day == now.day) {
+      // And if match has not already started
+      if (match.matchStart.isAfter(now) && match.matchStart.year == now.year && match.matchStart.month == now.month && match.matchStart.day == now.day ) {
         final response = await http.post(
           Uri.parse('https://obstawiator.pages.dev/API/IsMyBetPlaced'), // Corrected API endpoint
           headers: <String, String>{
@@ -174,6 +175,9 @@ class _MatchListState extends State<MatchList> {
         _finishedMatchesOffset += newMatches.length;
         // ignore: avoid_print
         print('Current finished matches count after adding: ${_finishedMatches.length}');
+        if (_finishedMatches.length < 10) {
+          _showLoadMoreButton = false;
+        }
         // ignore: avoid_print
         print('New finished matches offset: $_finishedMatchesOffset');
         _checkBetsForMatches(_finishedMatches); // Check bets after loading finished matches
@@ -197,7 +201,7 @@ class _MatchListState extends State<MatchList> {
       body: Material( // Opakowanie widżetem Material
         color: Theme.of(context).colorScheme.surface, // Ustawienie koloru tła
         child: Center( // Wyśrodkowanie ListView
-          child: ListView.builder(
+          child: _matches.isEmpty && _finishedMatches.isEmpty && !_showLoadMoreButton ? const Center(child: Text('Nie ma więcej zakończonych meczów do załadowania')) : ListView.builder(
             // shrinkWrap: true, // Usunięcie shrinkWrap, aby umożliwić przewijanie w przypadku dużej liczby elementów
             itemCount: _matches.length + _finishedMatches.length,
             itemBuilder: (context, index) {
@@ -284,16 +288,7 @@ class _MatchListState extends State<MatchList> {
               label: const Text('Załaduj zakończone mecze'),
               icon: const Icon(Icons.download),
             )
-          : null,
-      bottomSheet: _showLoadMoreButton
-          ? null // Hide if button is shown
-          : Padding( // Added padding for better visual spacing
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          _matches.isEmpty && _finishedMatches.isEmpty && !_showLoadMoreButton ? 'Nie ma więcej zakończonych meczów do załadowania' : '',
-          textAlign: TextAlign.center,
-        ),
-      ),
+          : const SizedBox.shrink(), // Use SizedBox.shrink() to make the button completely invisible
       bottomNavigationBar: main.navigationBar(context),
     );
   }

@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage>
       };
       var url = Uri.parse("https://obstawiator.pages.dev/API/Login");
       var request = http.Request('POST', url);
-      request.body = json.encode({"email": _emailController.text, "password": _passwordController.text});
+      request.body = json.encode({"email": _emailController.text.toLowerCase(), "password": _passwordController.text});
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
       var result = await response.stream.bytesToString();
