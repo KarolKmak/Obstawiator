@@ -15,7 +15,7 @@ export async function onRequestPost(context)
 
   if(checkResult.results.length>0)
   {
-    if(reqBody.finishedMatchesOffset)
+    if(reqBody.finishedMatchesOffset != null) // Check if finishedMatchesOffset is explicitly provided and not just falsy (like 0)
     {
       const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset);
       const returnValue = await stmt.run();
