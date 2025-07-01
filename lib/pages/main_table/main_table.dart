@@ -201,7 +201,6 @@ class _MyHomePageState extends State<MyHomePage>
   {
     return
       [
-        const DataColumn(label: Text("Miejsce")),
         const DataColumn(label: Text("Gracz")),
         const DataColumn(label: Text("Mistrz")),
         const DataColumn(label: Text("Król strzelców")),
@@ -225,7 +224,6 @@ class _MyHomePageState extends State<MyHomePage>
       DataRow rowWidget = DataRow(
           color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
           cells: [
-            DataCell(Text((index + 1).toString())), // Displaying the rank (index + 1)
             DataCell(Text(e.name)),
             DataCell(Text(e.championbet)),
             DataCell(Text(e.topscorer)),
