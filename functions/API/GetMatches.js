@@ -12,11 +12,21 @@ export async function onRequestPost(context)
   const checkUserID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
   const checkResult = await checkUserID.run();
   console.log(checkResult.results);
+
   if(checkResult.results.length>0)
   {
-    const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore FROM Matches WHERE matchFinished = 1 ORDER BY matchStart ASC LIMIT 10");
-    const returnValue = await stmt.run();
-    return Response.json(returnValue.results)
+    if(reqBody.finishedMatchesOffset)
+    {
+      const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset);
+      const returnValue = await stmt.run();
+      return Response.json(returnValue.results)
+    }
+    else
+    {
+      const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible FROM Matches WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT 10");
+      const returnValue = await stmt.run();
+      return Response.json(returnValue.results)
+    }
   }
   else
   {
