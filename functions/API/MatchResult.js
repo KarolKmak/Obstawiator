@@ -51,4 +51,5 @@ export async function onRequestPost(context)
         const updatePointsResult = await updatePoints.run();
     }
   }
+  return Response.json({message:"Pomyślnie zaktualizowano punkty"}, {status: 201});
 }
