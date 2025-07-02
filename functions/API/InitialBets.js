@@ -12,6 +12,11 @@ export async function onRequestPost(context)
   }
   const checkID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
   const checkIDResult = await checkID.run();
+  if(Date.now() > 1751472000000)
+  {
+    return Response.json({message: "Nie udało się dodać zakładu, za późno"}, {status: 403});
+  }
+
   if(checkIDResult.results.length>0)
   {
       const stmt = context.env.obstawiatorDB.prepare("UPDATE UserScores SET championBet = ?, topScorerBet = ? WHERE ID = ?").bind(reqBody.championBet, reqBody.topScorerBet, reqBody.ID);
