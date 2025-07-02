@@ -79,23 +79,29 @@ class _MyHomePageState extends State<MyHomePage>
     return Scaffold(
       appBar: main.titleBar(context),
       body: Center(
-
         child: SizedBox.expand(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: DataTable(
-                columns: _createColumns(),
-                showCheckboxColumn: false, // Add this line
-                rows: _createRows()
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: DataTable(
+                      columnSpacing: constraints.maxWidth < 600 ? 10 : null, // Adjust column spacing for narrow screens
+                      dividerThickness: 1, // Add a divider between columns
+                      columns: _createColumns(),
+                      showCheckboxColumn: false, // Add this line
+                      rows: _createRows()),
+                ),
+              ),
             ),
           ),
         ),
-
       ),
       bottomNavigationBar: main.navigationBar(context),
     );
   }
-
   void _handleRowTap(int id) {
     if (kDebugMode) {
       print('Row with ID $id was tapped. UserID is ${main.userID}');

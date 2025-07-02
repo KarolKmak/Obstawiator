@@ -70,6 +70,30 @@ class _MatchBetsState extends State<MatchBets> {
       print('Error fetching match bets: $e');
     }
   }
+  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore) {
+    int points = 0;
+
+    // Check for correct winner or draw
+    if ((betHomeScore > betAwayScore && actualHomeScore > actualAwayScore) ||
+        (betHomeScore < betAwayScore && actualHomeScore < actualAwayScore) ||
+        (betHomeScore == betAwayScore && actualHomeScore == actualAwayScore)) {
+      points += 1;
+    }
+
+    // Check for correct goal difference
+    if ((betHomeScore - betAwayScore) == (actualHomeScore - actualAwayScore)) {
+      points += 1; // This makes it 2 if winner was also correct
+    } else if (points == 1 && (betHomeScore - betAwayScore) != (actualHomeScore - actualAwayScore)) {
+      // If only winner was correct, but not goal difference, points remain 1.
+      // This else if is to clarify, but not strictly needed if points are just additive.
+    }
+
+    // Check for exact score
+    if (betHomeScore == actualHomeScore && betAwayScore == actualAwayScore) {
+      points = 5; // Overrides previous points to be exactly 5
+    }
+    return points;
+  }
 
   Future<void> submitBet(String homeScore, String awayScore) async {
     final url = Uri.parse('https://obstawiator.pages.dev/API/BetMatch');
@@ -216,32 +240,52 @@ class _MatchBetsState extends State<MatchBets> {
             const SizedBox(height: 20),
             Center( // Center the Tile horizontally
               child: Tooltip(
-                message: 'Kliknij, aby dodać/zmienić swój zakład', // Tooltip message
-                child: Card( // Use Card for tile appearance
-                  elevation: 4.0, // Add some shadow for depth
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)), // Added rounded corners
-                  child: InkWell( // Make the Card tappable
-                    onTap: () => placeBet(context),
-                    borderRadius: BorderRadius.circular(8.0), // Ensure hover effect respects rounded corners
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0), // Padding inside the tile
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min, // Row takes minimum space needed
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Mój zakład: ${userBet ?? "Nie obstawiono"}', // Display user's bet or "Not placed"
-                            style: Theme.of(context).textTheme.titleMedium,
+                message: 'Kliknij, aby dodać/zmienić swój zakład',
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Card( // Use Card for tile appearance
+                      elevation: 4.0, // Add some shadow for depth
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)), // Added rounded corners
+                      child: InkWell( // Make the Card tappable
+                        onTap: () => placeBet(context),
+                        borderRadius: BorderRadius.circular(8.0), // Ensure hover effect respects rounded corners
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0), // Padding inside the tile
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // Row takes minimum space needed
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Mój zakład: ${userBet ?? "Nie obstawiono"}', // Display user's bet or "Not placed"
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              if (showWarning)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Icon(Icons.warning, color: Colors.red, size: 24.0),
+                                ),
+                            ],
                           ),
-                          if (showWarning)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Icon(Icons.warning, color: Colors.red, size: 24.0),
-                            ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    if (widget.homeScore != null && widget.awayScore != null && userBetData != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Card(
+                          elevation: 4.0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              'Zdobyte punkty: ${calculatePoints(userBetData!['homeScore'], userBetData!['awayScore'], widget.homeScore!, widget.awayScore!)}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -249,7 +293,9 @@ class _MatchBetsState extends State<MatchBets> {
             const Divider(),
             Text('Zakłady innych użytkowników:', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
-            if (widget.betVisible == 1 || (widget.betVisible == 0 && widget.matchStart.isBefore(DateTime.now())))
+            if (widget.betVisible == 1 ||
+                (widget.betVisible == 0 &&
+                    widget.matchStart.isBefore(DateTime.now())))
               Expanded(
                 child: SingleChildScrollView( // Added SingleChildScrollView for vertical scrolling if needed
                   child: Padding(
@@ -284,9 +330,19 @@ class _MatchBetsState extends State<MatchBets> {
                           final name = betData['name'] as String;
                           final homeScore = betData['homeScore'] as int?;
                           final awayScore = betData['awayScore'] as int?;
-                          final points = betData['points'] as int?; // Assuming 'points' field exists
+                          int? calculatedPoints;
+                          if (widget.homeScore != null && widget.awayScore != null && homeScore != null && awayScore != null) {
+                            calculatedPoints = calculatePoints(
+                              homeScore,
+                              awayScore,
+                              widget.homeScore!,
+                              widget.awayScore!,
+                            );
+                          }
+
                           final betDisplay = '${homeScore ?? '-'} : ${awayScore ?? '-'}';
                           return TableRow(
+                            // decoration: name == globals.userName ? BoxDecoration(color: Colors.lightBlue[50]) : null, // Highlight current user's row
                             children: [
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -299,7 +355,7 @@ class _MatchBetsState extends State<MatchBets> {
                               if (widget.homeScore != null) // Conditionally add Points cell
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: Text(points?.toString() ?? '-', textAlign: TextAlign.center),
+                                  child: Text(calculatedPoints?.toString() ?? '-', textAlign: TextAlign.center),
                                 ),
                             ],
                           );

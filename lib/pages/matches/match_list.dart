@@ -209,7 +209,7 @@ class _MatchListState extends State<MatchList> {
               // Sprawdzenie orientacji ekranu
               final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
               // Szerokość kontenera dostosowana do orientacji
-              final containerWidth = isPortrait ? MediaQuery.of(context).size.width * 0.9 : MediaQuery.of(context).size.width * 0.5; // Zmienione z 0.5 na 0.9 dla portretu
+              final containerWidth = isPortrait ? MediaQuery.of(context).size.width * 1 : MediaQuery.of(context).size.width * 0.5; // Zmienione z 0.5 na 0.9 dla portretu
 
               final exclamationColor = match.getExclamationMarkColor();
               return Center( // Wyśrodkowanie każdej karty
