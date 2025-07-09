@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:obstawiator/pages/main_table/main_table.dart' as main_table;
 import 'package:obstawiator/pages/start_page/registration_page.dart' as registration;
@@ -76,64 +77,70 @@ class _LoginPageState extends State<LoginPage>
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey,
-          child: Center(
-            child: SizedBox(
-              width: MediaQuery.of(context).size.height > MediaQuery.of(context).size.width
-                  ? MediaQuery.of(context).size.width // Use full width if height > width
-                  : MediaQuery.of(context).size.width * 0.4, // 40% of screen width
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'E-mail'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Proszę podać adres e-mail';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Proszę podać poprawny adres e-mail';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Hasło'),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                      {
-                        return 'Proszę podać hasło';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: login,
-                        child: const Text('Zaloguj się'),
+            key: _formKey,
+            child: AutofillGroup(
+              child: Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.height > MediaQuery.of(context).size.width
+                      ? MediaQuery.of(context).size.width // Use full width if height > width
+                      : MediaQuery.of(context).size.width * 0.4, // 40% of screen width
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(labelText: 'E-mail'),
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Proszę podać adres e-mail';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Proszę podać poprawny adres e-mail';
+                          }
+                          return null;
+                        },
+                      ),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(labelText: 'Hasło'),
+                        obscureText: true,
+                        autofillHints: const [AutofillHints.password],
+                        onEditingComplete: () => TextInput.finishAutofillContext(),
+                        validator: (value) {
+                          if (value == null || value.isEmpty)
+                          {
+                            return 'Proszę podać hasło';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: login,
+                            child: const Text('Zaloguj się'),
+                          ),
+                          TextButton(
+                            onPressed: _handleChangePassword,
+                            child: const Text('Zapomniałeś hasła?'),
+                          ),
+                        ],
                       ),
                       TextButton(
-                        onPressed: _handleChangePassword,
-                        child: const Text('Zapomniałeś hasła?'),
+                        onPressed: register,
+                        child: const Text('Stwórz nowe konto'),
                       ),
                     ],
                   ),
-                  TextButton(
-                    onPressed: register,
-                    child: const Text('Stwórz nowe konto'),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+        )
       ),
     );
   }
