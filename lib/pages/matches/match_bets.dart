@@ -95,18 +95,21 @@ class _MatchBetsState extends State<MatchBets> {
     return points;
   }
 
-  Future<void> submitBet(String homeScore, String awayScore) async {
+  Future<void> submitBet(String homeScore, String awayScore, int? winner) async {
     final url = Uri.parse('https://obstawiator.pages.dev/API/BetMatch');
     try {
+      final body = json.encode({
+        'matchID': widget.matchID,
+        'ID': main.userID,
+        'homeScore': int.tryParse(homeScore),
+        'awayScore': int.tryParse(awayScore),
+        'winner': winner
+      });
+      print('Submitting bet with body: $body'); // Print the body here
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: json.encode({
-          'matchID': widget.matchID,
-          'ID': main.userID,
-          'homeScore': int.tryParse(homeScore),
-          'awayScore': int.tryParse(awayScore),
-        }),
+        body: body,
       );
       if (response.statusCode == 201) {
         print('Bet placed successfully');
@@ -126,6 +129,11 @@ class _MatchBetsState extends State<MatchBets> {
     }
   }
 
+  // State variable to hold the selected winner
+  int? _selectedWinner; // null: no winner, 0: host, 1: guest
+
+
+
   void placeBet(BuildContext context) {
     print("Placing bet for match ID: ${widget.matchID}");
 
@@ -135,20 +143,61 @@ class _MatchBetsState extends State<MatchBets> {
       builder: (BuildContext context) {
         TextEditingController homeScoreController = TextEditingController();
         TextEditingController awayScoreController = TextEditingController();
+        // Use a StatefulWidget for the dialog content to manage the checkbox state
+        int? dialogSelectedWinner = _selectedWinner; // Initialize with current selection or null
+
         return AlertDialog(
           title: Text('Obstaw zakład'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              TextField(
-                controller: homeScoreController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
-              ),
-              TextField(
-                controller: awayScoreController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
+              // StatefulBuilder to manage checkbox state within the dialog
+              StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: dialogSelectedWinner == 0, // 0 for host
+                            onChanged: (bool? value) {
+                              setState(() {
+                                dialogSelectedWinner = value! ? 0 : null;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: homeScoreController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: dialogSelectedWinner == 1, // 1 for guest
+                            onChanged: (bool? value) {
+                              setState(() {
+                                dialogSelectedWinner = value! ? 1 : null;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: awayScoreController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -163,7 +212,7 @@ class _MatchBetsState extends State<MatchBets> {
                 final homeScore = homeScoreController.text;
                 final awayScore = awayScoreController.text;
                 if (homeScore.isNotEmpty && awayScore.isNotEmpty) {
-                  submitBet(homeScore, awayScore);
+                  submitBet(homeScore, awayScore, dialogSelectedWinner);
                   Navigator.of(context).pop();
                 }
               },
