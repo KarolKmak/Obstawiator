@@ -25,7 +25,15 @@ export async function onRequestPost(context)
     const checkIfBetPlacedResult = await checkIfBetPlaced.run();
     if(checkIfBetPlacedResult.results.length>0)
     {
-      const placeBet = context.env.obstawiatorDB.prepare("UPDATE BetMatch SET homeScore = ?, awayScore = ? WHERE userID = ? AND matchID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.ID, reqBody.matchID);
+      let placeBet;
+      if(reqBody.winner)
+      {
+        placeBet = context.env.obstawiatorDB.prepare("UPDATE BetMatch SET homeScore = ?, awayScore = ?, winner = ? WHERE userID = ? AND matchID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.winner, reqBody.ID, reqBody.matchID);
+      }
+      else
+      {
+        placeBet = context.env.obstawiatorDB.prepare("UPDATE BetMatch SET homeScore = ?, awayScore = ? WHERE userID = ? AND matchID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.ID, reqBody.matchID);
+      }
       const placeBetResult = await placeBet.run();
       return Response.json({message:"Pomyślnie zaktualizowano zakład"}, {status: 201});
     }
@@ -34,7 +42,15 @@ export async function onRequestPost(context)
       const getNewID = context.env.obstawiatorDB.prepare("SELECT MAX(ID) as ID FROM BetMatch");
       const getNewIDResult = await getNewID.run();
       const newID = getNewIDResult.results[0].ID + 1;
-      const placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID) VALUES (?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID);
+      let placeBet;
+      if(reqBody.winner)
+      {
+        placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID, winner) VALUES (?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID, reqBody.winner);
+      }
+      else
+      {
+      placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID) VALUES (?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID);
+      }
       const placeBetResult = await placeBet.run();
       return Response.json({message:"Pomyślnie dodano zakład"}, {status: 201});
     }
