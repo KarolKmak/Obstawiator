@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage>
                         controller: _emailController,
                         decoration: const InputDecoration(labelText: 'E-mail'),
                         keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
+                        autofillHints: [AutofillHints.newUsername, AutofillHints.username],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Proszę podać adres e-mail';
@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage>
                         controller: _passwordController,
                         decoration: const InputDecoration(labelText: 'Hasło'),
                         obscureText: true,
-                        autofillHints: const [AutofillHints.password],
+                        autofillHints: [AutofillHints.newPassword, AutofillHints.password],
                         onEditingComplete: () => TextInput.finishAutofillContext(),
                         validator: (value) {
                           if (value == null || value.isEmpty)
