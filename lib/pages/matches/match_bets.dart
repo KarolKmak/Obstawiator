@@ -13,7 +13,7 @@ class MatchBets extends StatefulWidget {
   final int? awayScore;
   final int betVisible;
   final bool isGroupStage;
-  final bool? winner;
+  final int? winner;
   MatchBets({
     super.key,
     required this.matchID,
@@ -91,7 +91,7 @@ class _MatchBetsState extends State<MatchBets> {
       print('Error fetching match bets: $e');
     }
   }
-  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore, {bool? betWinner, bool? actualWinner}) {
+  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore, {bool? betWinner, int? actualWinner}) {
     int points = 0;
 
     if (widget.isGroupStage) {
