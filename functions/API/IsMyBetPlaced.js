@@ -17,7 +17,7 @@ export async function onRequestPost(context)
   if(checkResult.results.length>0)
   {
     // Check if user has placed a bet for the given match
-    const getUserBet = context.env.obstawiatorDB.prepare("SELECT matchID, winner FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
+    const getUserBet = context.env.obstawiatorDB.prepare("SELECT matchID FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
     const getUserBetResult = await getUserBet.run();
     // If user has placed a bet
     if(getUserBetResult.results.length>0)
