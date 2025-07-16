@@ -106,13 +106,12 @@ class _MatchListState extends State<MatchList> {
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
-          print('Response body: $data'); // Print the response body
           // Check if data is a list and not empty
           if (data is List && data.isNotEmpty) {
             // Assuming the relevant bet information is in the first element of the list
             // and the key for the bet is 'userBet' or if a winner is already declared.
             match.hasBet = (data[0]['userBetHome'] != null && data[0]['userBetAway'] != null);
-          } else if (data is Map<String, dynamic> && data['winner'] != null) {
+          } else if (data is Map<String, dynamic>) {
             // Check if data is a map
             match.hasBet = data['userBet'] != null;
           }
