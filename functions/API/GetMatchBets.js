@@ -15,7 +15,7 @@ export async function onRequestPost(context)
   if(checkResult.results.length>0)
   {
 
-    const getMatchBets = context.env.obstawiatorDB.prepare("SELECT BetMatch.homeScore, BetMatch.awayScore, Users.name BetMatch.winner FROM BetMatch INNER JOIN Users ON BetMatch.userID=Users.ID WHERE BetMatch.matchID = ? AND BetMatch.userID != ?").bind(reqBody.matchID, reqBody.ID);
+    const getMatchBets = context.env.obstawiatorDB.prepare("SELECT BetMatch.homeScore, BetMatch.awayScore, Users.name, BetMatch.winner FROM BetMatch INNER JOIN Users ON BetMatch.userID=Users.ID WHERE BetMatch.matchID = ? AND BetMatch.userID != ?").bind(reqBody.matchID, reqBody.ID);
     const getMatchBetsResult = await getMatchBets.run();
 
     const getUserBet = context.env.obstawiatorDB.prepare("SELECT homeScore, awayScore, winner FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
