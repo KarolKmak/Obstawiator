@@ -26,7 +26,7 @@ export async function onRequestPost(context)
     if(checkIfBetPlacedResult.results.length>0)
     {
       let placeBet;
-      if(reqBody.winner == 0)
+      if(reqBody.winner == 0 || reqBody.winner == 1)
       {
         placeBet = context.env.obstawiatorDB.prepare("UPDATE BetMatch SET homeScore = ?, awayScore = ?, winner = ? WHERE userID = ? AND matchID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.winner, reqBody.ID, reqBody.matchID);
       }
@@ -43,7 +43,7 @@ export async function onRequestPost(context)
       const getNewIDResult = await getNewID.run();
       const newID = getNewIDResult.results[0].ID + 1;
       let placeBet;
-      if(reqBody.winner = 0)
+      if(reqBody.winner = 0 || reqBody.winner == 1)
       {
         placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID, winner) VALUES (?, ?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID, reqBody.winner);
       }
