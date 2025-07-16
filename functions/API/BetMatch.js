@@ -42,15 +42,9 @@ export async function onRequestPost(context)
       const getNewID = context.env.obstawiatorDB.prepare("SELECT MAX(ID) as ID FROM BetMatch");
       const getNewIDResult = await getNewID.run();
       const newID = getNewIDResult.results[0].ID + 1;
-      let placeBet;
-      if(reqBody.winner = 0 || reqBody.winner == 1)
-      {
+     
         placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID, winner) VALUES (?, ?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID, reqBody.winner);
-      }
-      else
-      {
-      placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID) VALUES (?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID);
-      }
+      //POPRAWIĆ!!!!!!!!!!!!!!!!!!!!!!!!!
       const placeBetResult = await placeBet.run();
       return Response.json({message:"Pomyślnie dodano zakład"}, {status: 201});
     }
