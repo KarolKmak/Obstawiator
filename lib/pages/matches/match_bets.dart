@@ -12,6 +12,8 @@ class MatchBets extends StatefulWidget {
   final int? homeScore;
   final int? awayScore;
   final int betVisible;
+  final bool isGroupStage;
+  final bool? winner;
   MatchBets({
     super.key,
     required this.matchID,
@@ -21,8 +23,23 @@ class MatchBets extends StatefulWidget {
     this.homeScore,
     this.awayScore,
     required this.betVisible,
+    required this.isGroupStage,
+    required this.winner,
   })  : otherUsersBetsData = [],
-        userBetData = null;
+        userBetData = null {
+    // Print all passed values
+    print('MatchBets constructor called with:');
+    print('  matchID: $matchID');
+    print('  host: $host');
+    print('  guest: $guest');
+    print('  matchStart: $matchStart');
+    print('  homeScore: $homeScore');
+    print('  awayScore: $awayScore');
+    print('  betVisible: $betVisible');
+    print('  isGroupStage: $isGroupStage');
+    print('  winner: $winner');
+  }
+
 
   Map<String, dynamic>? userBetData;
   List<Map<String, dynamic>> otherUsersBetsData = [];
@@ -58,6 +75,10 @@ class _MatchBetsState extends State<MatchBets> {
         }
         if (data['matchBets'] != null) {
           otherUsersBetsData = List<Map<String, dynamic>>.from(data['matchBets']);
+          if (!widget.isGroupStage && data['winner'] != null) {
+            // Assuming 'winner' is part of the userBet or general match data
+            // For now, let's assume it's part of userBetData if applicable
+          }
         } else {
           otherUsersBetsData = []; // Ensure otherUsersBetsData is reset if not present
         }
@@ -70,27 +91,42 @@ class _MatchBetsState extends State<MatchBets> {
       print('Error fetching match bets: $e');
     }
   }
-  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore) {
+  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore, {bool? betWinner, bool? actualWinner}) {
     int points = 0;
 
-    // Check for correct winner or draw
-    if ((betHomeScore > betAwayScore && actualHomeScore > actualAwayScore) ||
-        (betHomeScore < betAwayScore && actualHomeScore < actualAwayScore) ||
-        (betHomeScore == betAwayScore && actualHomeScore == actualAwayScore)) {
-      points += 1;
-    }
+    if (widget.isGroupStage) {
+      // Original logic for group stage
+      // Check for correct winner or draw
+      if ((betHomeScore > betAwayScore && actualHomeScore > actualAwayScore) ||
+          (betHomeScore < betAwayScore && actualHomeScore < actualAwayScore) ||
+          (betHomeScore == betAwayScore && actualHomeScore == actualAwayScore)) {
+        points += 1;
+      }
 
-    // Check for correct goal difference
-    if ((betHomeScore - betAwayScore) == (actualHomeScore - actualAwayScore)) {
-      points += 1; // This makes it 2 if winner was also correct
-    } else if (points == 1 && (betHomeScore - betAwayScore) != (actualHomeScore - actualAwayScore)) {
-      // If only winner was correct, but not goal difference, points remain 1.
-      // This else if is to clarify, but not strictly needed if points are just additive.
-    }
+      // Check for correct goal difference
+      if ((betHomeScore - betAwayScore) == (actualHomeScore - actualAwayScore)) {
+        points += 1; // This makes it 2 if winner was also correct
+      } else if (points == 1 && (betHomeScore - betAwayScore) != (actualHomeScore - actualAwayScore)) {
+        // If only winner was correct, but not goal difference, points remain 1.
+      }
 
-    // Check for exact score
-    if (betHomeScore == actualHomeScore && betAwayScore == actualAwayScore) {
-      points = 5; // Overrides previous points to be exactly 5
+      // Check for exact score
+      if (betHomeScore == actualHomeScore && betAwayScore == actualAwayScore) {
+        points = 5; // Overrides previous points to be exactly 5
+      }
+    } else {
+      // New logic for non-group stage
+      // Check for correct winner
+      if (betWinner != null && actualWinner != null && betWinner == actualWinner) {
+        points += 2;
+      }
+
+      // Check for exact score
+      if (betHomeScore == actualHomeScore && betAwayScore == actualAwayScore) {
+        // If winner was also correct, total is 2 + 4 = 6.
+        // If winner was not correct, but score is, this adds 4.
+        points += 4;
+      }
     }
     return points;
   }
@@ -157,6 +193,11 @@ class _MatchBetsState extends State<MatchBets> {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
+                      if (!widget.isGroupStage)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Text('Zakład na wynik dotyczy tylko regulaminowego czasu gry.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700])),
+                        ),
                       Row(
                         children: [
                           Checkbox(
@@ -211,10 +252,22 @@ class _MatchBetsState extends State<MatchBets> {
               onPressed: () {
                 final homeScore = homeScoreController.text;
                 final awayScore = awayScoreController.text;
-                if (homeScore.isNotEmpty && awayScore.isNotEmpty) {
-                  submitBet(homeScore, awayScore, dialogSelectedWinner);
-                  Navigator.of(context).pop();
+                // Validation for non-group stage: winner must be selected
+                if (!widget.isGroupStage && dialogSelectedWinner == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Musisz wybrać zwycięzcę meczu.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return; // Prevent submission
                 }
+                if (homeScore.isEmpty || awayScore.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Musisz podać wynik.')));
+                  return;
+                }
+                submitBet(homeScore, awayScore, dialogSelectedWinner);
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -226,7 +279,13 @@ class _MatchBetsState extends State<MatchBets> {
   Widget build(BuildContext context) {
     final String? userBet = userBetData != null
         ? '${userBetData?['homeScore'] ?? '-'} : ${userBetData?['awayScore'] ?? '-'}'
+            '${!widget.isGroupStage && userBetData?['winner'] != null ? ' (Zwycięzca: ${userBetData!['winner'] == 0 ? widget.host : widget.guest})' : ''}'
         : null; // Null if no bet, otherwise the bet string.
+
+    String? userWinnerDisplay;
+    if (!widget.isGroupStage && userBetData != null && userBetData!['winner'] != null) {
+      userWinnerDisplay = userBetData!['winner'] == 0 ? widget.host : widget.guest;
+    }
 
     final timeToMatch = widget.matchStart.difference(DateTime.now());
     // Show warning if no bet is placed and the match is less than 2 hours away, but not if it's less than 0 minutes away
@@ -305,9 +364,14 @@ class _MatchBetsState extends State<MatchBets> {
                             mainAxisSize: MainAxisSize.min, // Row takes minimum space needed
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'Mój zakład: ${userBet ?? "Nie obstawiono"}', // Display user's bet or "Not placed"
-                                style: Theme.of(context).textTheme.titleMedium,
+                              Column(
+                                children: [
+                                  Text(
+                                    'Mój zakład: ${userBetData != null ? (userBetData!['homeScore']?.toString() ?? '-') + ' : ' + (userBetData!['awayScore']?.toString() ?? '-') : "Nie obstawiono"}',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  if (userWinnerDisplay != null) Text('Zwycięzca: $userWinnerDisplay', style: Theme.of(context).textTheme.titleSmall),
+                                ],
                               ),
                               if (showWarning)
                                 Padding(
@@ -327,7 +391,7 @@ class _MatchBetsState extends State<MatchBets> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Text(
+                            child: Text( // TODO: Add winner logic for non-group stage
                               'Zdobyte punkty: ${calculatePoints(userBetData!['homeScore'], userBetData!['awayScore'], widget.homeScore!, widget.awayScore!)}',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
@@ -353,6 +417,7 @@ class _MatchBetsState extends State<MatchBets> {
                       columnWidths: {
                         0: FlexColumnWidth(),
                         1: FixedColumnWidth(100.0), // Width for bet
+                        if (!widget.isGroupStage) 2: FixedColumnWidth(100.0), // Width for winner
                         if (widget.homeScore != null) 2: FixedColumnWidth(80.0), // Width for points, if shown
                       },
                       border: TableBorder.all(color: Colors.grey.shade300, width: 1), // Add border to table
@@ -368,6 +433,11 @@ class _MatchBetsState extends State<MatchBets> {
                               padding: const EdgeInsets.all(8.0),
                               child: Text('Zakład', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
                             ),
+                            if (!widget.isGroupStage)
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text('Zwycięzca', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                              ),
                             if (widget.homeScore != null) // Conditionally add Points cell
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -379,6 +449,12 @@ class _MatchBetsState extends State<MatchBets> {
                           final name = betData['name'] as String;
                           final homeScore = betData['homeScore'] as int?;
                           final awayScore = betData['awayScore'] as int?;
+                          final winner = betData['winner'] as int?;
+                          bool? userBetWinnerEnum;
+                          if (winner != null) {
+                            userBetWinnerEnum = winner == 0; // true for host, false for guest
+                          }
+
                           int? calculatedPoints;
                           if (widget.homeScore != null && widget.awayScore != null && homeScore != null && awayScore != null) {
                             calculatedPoints = calculatePoints(
@@ -386,10 +462,17 @@ class _MatchBetsState extends State<MatchBets> {
                               awayScore,
                               widget.homeScore!,
                               widget.awayScore!,
+                              betWinner: userBetWinnerEnum,
+                              actualWinner: widget.winner,
                             );
                           }
 
                           final betDisplay = '${homeScore ?? '-'} : ${awayScore ?? '-'}';
+                          String? winnerDisplay;
+                          if (!widget.isGroupStage && winner != null) {
+                            winnerDisplay = winner == 0 ? widget.host : widget.guest;
+                          }
+
                           return TableRow(
                             // decoration: name == globals.userName ? BoxDecoration(color: Colors.lightBlue[50]) : null, // Highlight current user's row
                             children: [
@@ -401,6 +484,11 @@ class _MatchBetsState extends State<MatchBets> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(betDisplay, textAlign: TextAlign.center),
                               ),
+                              if (!widget.isGroupStage)
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(winnerDisplay ?? '-', textAlign: TextAlign.center),
+                                ),
                               if (widget.homeScore != null) // Conditionally add Points cell
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:http/http.dart' as http;
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:obstawiator/pages/matches/match_bets.dart';
@@ -14,7 +15,9 @@ class Match {
   final int? awayScore;
   final DateTime matchStart;
   final int betVisible;
-  bool hasBet; // Placeholder for bet status
+  bool hasBet;
+  final bool isGroupStage;
+  final bool? winner;
   /// Tworzy obiekt [Match].
   Match({
     required this.host,
@@ -24,6 +27,8 @@ class Match {
     required this.matchStart,
     required this.ID,
     required this.betVisible,
+    required this.isGroupStage,
+    this.winner,
     this.hasBet = false, // Default to false
   });
 
@@ -37,6 +42,8 @@ class Match {
       awayScore: json['awayScore'], // Ensure this matches the JSON key
       matchStart: DateTime.fromMillisecondsSinceEpoch(json['matchStart'], isUtc: true).toLocal(),
       betVisible: json['betVisible'],
+      isGroupStage: json['isGroupStage'] == 'true',
+      winner: json['winner'],
       // hasBet will be updated later,
     );
   }
@@ -76,6 +83,7 @@ class _MatchListState extends State<MatchList> {
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('pl_PL', null).then((_) => _loadMatches());
     _loadMatches();
   }
 
@@ -234,6 +242,8 @@ class _MatchListState extends State<MatchList> {
                             awayScore: match.awayScore,
                             matchID: match.ID,
                             betVisible: match.betVisible,
+                            isGroupStage: match.isGroupStage,
+                            winner: match.winner,
                           ),
                         ));
                     },
@@ -271,7 +281,7 @@ class _MatchListState extends State<MatchList> {
 
                           ],
                         ),
-                        subtitle: Text('Początek o: ${DateFormat('dd/MM HH:mm').format(match.matchStart)}', textAlign: TextAlign.center),
+                        subtitle: Text('${DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart)}', textAlign: TextAlign.center),
                       ),
                     ),
                   ),
