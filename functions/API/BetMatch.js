@@ -45,7 +45,7 @@ export async function onRequestPost(context)
       let placeBet;
       if(reqBody.winner)
       {
-        placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID, winner) VALUES (?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID, reqBody.winner);
+        placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID, winner) VALUES (?, ?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID, reqBody.winner);
       }
       else
       {
