@@ -17,13 +17,13 @@ export async function onRequestPost(context)
   {
     if(reqBody.finishedMatchesOffset != null) // Check if finishedMatchesOffset is explicitly provided and not just falsy (like 0)
     {
-      const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset);
+      const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset);
       const returnValue = await stmt.run();
       return Response.json(returnValue.results)
     }
     else
     {
-      const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible FROM Matches WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT 10");
+      const stmt = context.env.obstawiatorDB.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage FROM Matches WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT 10");
       const returnValue = await stmt.run();
       return Response.json(returnValue.results)
     }
