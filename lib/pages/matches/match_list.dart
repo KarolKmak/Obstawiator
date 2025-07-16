@@ -232,6 +232,8 @@ class _MatchListState extends State<MatchList> {
                     highlightColor: Theme.of(context).colorScheme.secondaryContainer, // Zmiana koloru tła po kliknięciu
                     splashColor: Colors.transparent, // Usunięcie efektu plusku
                     onTap: () {
+                      // ignore: avoid_print
+                      print('Match winner before navigation: ${match.winner}');
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -246,7 +248,11 @@ class _MatchListState extends State<MatchList> {
                             isGroupStage: match.isGroupStage,
                             winner: match.winner,
                           ),
-                        ));
+                        ),
+                      ).then((_) {
+                        // ignore: avoid_print
+                        print('Match winner after navigation: ${match.winner}');
+                      });
                     },
                       child: ListTile(
                         title: Row(

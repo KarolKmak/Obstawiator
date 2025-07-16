@@ -91,7 +91,7 @@ class _MatchBetsState extends State<MatchBets> {
       print('Error fetching match bets: $e');
     }
   }
-  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore, {bool? betWinner, int? actualWinner}) {
+  int calculatePoints(int betHomeScore, int betAwayScore, int actualHomeScore, int actualAwayScore, {int? betWinner, int? actualWinner}) {
     int points = 0;
 
     if (widget.isGroupStage) {
@@ -117,7 +117,7 @@ class _MatchBetsState extends State<MatchBets> {
     } else {
       // New logic for non-group stage
       // Check for correct winner
-      if (betWinner != null && actualWinner != null && betWinner == actualWinner) {
+      if (betWinner != null && actualWinner != null && betWinner == actualWinner) { // betWinner is int (0 or 1), actualWinner is int (0 or 1)
         points += 2;
       }
 
@@ -391,8 +391,8 @@ class _MatchBetsState extends State<MatchBets> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Text( // TODO: Add winner logic for non-group stage
-                              'Zdobyte punkty: ${calculatePoints(userBetData!['homeScore'], userBetData!['awayScore'], widget.homeScore!, widget.awayScore!)}',
+                            child: Text(
+                              'Zdobyte punkty: ${calculatePoints(userBetData!['homeScore'], userBetData!['awayScore'], widget.homeScore!, widget.awayScore!, betWinner: userBetData!['winner'], actualWinner: widget.winner)}',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
@@ -417,8 +417,8 @@ class _MatchBetsState extends State<MatchBets> {
                       columnWidths: {
                         0: FlexColumnWidth(),
                         1: FixedColumnWidth(100.0), // Width for bet
-                        if (!widget.isGroupStage) 2: FixedColumnWidth(100.0), // Width for winner
-                        if (widget.homeScore != null) 2: FixedColumnWidth(80.0), // Width for points, if shown
+                        if (!widget.isGroupStage) 2: FlexColumnWidth(), // Width for winner, adjusted to FlexColumnWidth
+                        if (widget.homeScore != null && widget.isGroupStage) 2: FixedColumnWidth(90.0) // Width for points, if shown and group stage
                       },
                       border: TableBorder.all(color: Colors.grey.shade300, width: 1), // Add border to table
                       children: [
@@ -450,11 +450,6 @@ class _MatchBetsState extends State<MatchBets> {
                           final homeScore = betData['homeScore'] as int?;
                           final awayScore = betData['awayScore'] as int?;
                           final winner = betData['winner'] as int?;
-                          bool? userBetWinnerEnum;
-                          if (winner != null) {
-                            userBetWinnerEnum = winner == 0; // true for host, false for guest
-                          }
-
                           int? calculatedPoints;
                           if (widget.homeScore != null && widget.awayScore != null && homeScore != null && awayScore != null) {
                             calculatedPoints = calculatePoints(
@@ -462,7 +457,7 @@ class _MatchBetsState extends State<MatchBets> {
                               awayScore,
                               widget.homeScore!,
                               widget.awayScore!,
-                              betWinner: userBetWinnerEnum,
+                              betWinner: winner, // Pass the integer winner directly
                               actualWinner: widget.winner,
                             );
                           }
