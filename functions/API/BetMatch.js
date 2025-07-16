@@ -42,7 +42,7 @@ export async function onRequestPost(context)
       const getNewID = context.env.obstawiatorDB.prepare("SELECT MAX(ID) as ID FROM BetMatch");
       const getNewIDResult = await getNewID.run();
       const newID = getNewIDResult.results[0].ID + 1;
-     
+      let placeBet;     
         placeBet = context.env.obstawiatorDB.prepare("INSERT INTO BetMatch (userID, matchID, homeScore, awayScore, ID, winner) VALUES (?, ?, ?, ?, ?, ?)").bind(reqBody.ID, reqBody.matchID, reqBody.homeScore, reqBody.awayScore, newID, reqBody.winner);
       //POPRAWIĆ!!!!!!!!!!!!!!!!!!!!!!!!!
       const placeBetResult = await placeBet.run();
