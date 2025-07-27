@@ -22,7 +22,7 @@ export async function onRequestPost(context)
   for(let i = 0; i <= usersAmount; i++)
   {
     var points = 0;
-    const getUserBet = context.env.obstawiatorDB.prepare("SELECT championBet, topScorerBet FROM UserScores WHERE userID = ?").bind(i);
+    const getUserBet = context.env.obstawiatorDB.prepare("SELECT championBet, topScorerBet FROM UserScores WHERE ID = ?").bind(i);
     const getUserBetResult = await getUserBet.run();
     if(getUserBetResult.results.length>0)
     {
