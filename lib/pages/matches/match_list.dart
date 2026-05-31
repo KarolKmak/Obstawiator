@@ -42,7 +42,7 @@ class Match {
       awayScore: json['awayScore'], // Ensure this matches the JSON key
       matchStart: DateTime.fromMillisecondsSinceEpoch(json['matchStart'], isUtc: true).toLocal(),
       betVisible: json['betVisible'],
-      isGroupStage: json['isGroupStage'] == 'true',
+      isGroupStage: json['isGroupStage'] == 'true' || json['isGroupStage'] == 1 || json['isGroupStage'] == true,
       winner: json['winner'],
       // hasBet will be updated later,
     );
