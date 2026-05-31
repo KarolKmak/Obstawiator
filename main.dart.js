@@ -25693,7 +25693,7 @@ _.b=b
 _.c=c
 _.d=d
 _.e=e},
-pA:function pA(a,b,c,d,e,f,g,h,i,j,k){var _=this
+pA:function pA(a,b,c,d,e,f,g,h,i,j){var _=this
 _.c=a
 _.d=b
 _.e=c
@@ -25703,8 +25703,7 @@ _.w=f
 _.x=g
 _.y=h
 _.z=i
-_.as=j
-_.a=k},
+_.a=j},
 Tc:function Tc(a){var _=this
 _.d=null
 _.e=a
@@ -86621,20 +86620,19 @@ s=A.fR(new A.anK(r),null,t.z)
 A.dc(this.b,!1).l8(s).bS(new A.anL(r),t.P)},
 $S:0}
 A.anK.prototype={
-$1(a){var s,r=this.a,q=r.b,p=r.c,o=r.f,n=r.d,m=r.e,l=r.a,k=r.r,j=r.x
-r=r.y
-s=A.a([],t.H7)
+$1(a){var s=this.a,r=s.b,q=s.c,p=s.f,o=s.d,n=s.e,m=s.a,l=s.r,k=s.x
+s=s.y
 A.cE("MatchBets constructor called with:")
-A.cE("  matchID: "+l)
-A.cE("  host: "+q)
-A.cE("  guest: "+p)
-A.cE("  matchStart: "+o.k(0))
-A.cE("  homeScore: "+A.l(n))
-A.cE("  awayScore: "+A.l(m))
-A.cE("  betVisible: "+k)
-A.cE("  isGroupStage: "+j)
-A.cE("  winner: "+A.l(r))
-return new A.pA(l,q,p,o,n,m,k,j,r,s,null)},
+A.cE("  matchID: "+m)
+A.cE("  host: "+r)
+A.cE("  guest: "+q)
+A.cE("  matchStart: "+p.k(0))
+A.cE("  homeScore: "+A.l(o))
+A.cE("  awayScore: "+A.l(n))
+A.cE("  betVisible: "+l)
+A.cE("  isGroupStage: "+k)
+A.cE("  winner: "+A.l(s))
+return new A.pA(m,r,q,p,o,n,l,k,s,null)},
 $S:567}
 A.anL.prototype={
 $1(a){A.cE("Match winner after navigation: "+A.l(this.a.y))},
