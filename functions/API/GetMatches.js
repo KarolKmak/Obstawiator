@@ -10,10 +10,6 @@ export async function onRequestPost(context) {
     const db = context.env.obstawiatorDB;
     const sessionToken = context.request.headers.get("Authorization");
 
-    if (!sessionToken || !reqBody.ID) {
-      return new Response(JSON.stringify({ message: "Brak danych autoryzacyjnych (ID lub token)" }), { status: 401, headers: { "Content-Type": "application/json" } });
-    }
-
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
       .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
 
