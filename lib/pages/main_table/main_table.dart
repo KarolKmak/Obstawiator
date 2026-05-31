@@ -4,6 +4,7 @@ import 'package:obstawiator/pages/main_table/table_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
+import 'package:obstawiator/pages/start_page/login_page.dart';
 
 class MyHomePage extends StatefulWidget
 {
@@ -53,13 +54,23 @@ class _MyHomePageState extends State<MyHomePage>
                 points: points));
           });
         }
+      } else if (response.statusCode == 401) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sesja wygasła. Zaloguj się ponownie.')),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        }
       } else {
         if (kDebugMode) {
           print("Failed, status: ${response.statusCode}, body: ${response.body}");
         }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Błąd pobierania danych (401/403)')),
+            const SnackBar(content: Text('Błąd pobierania danych')),
           );
         }
       }
