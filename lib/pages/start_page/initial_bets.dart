@@ -37,7 +37,10 @@ class _InitialBetsState extends State<InitialBets>
       var response = await http.post(
         url,
         headers: headers,
-        body: json.encode({"ID": main.userID}),
+        body: json.encode({
+          "ID": main.userID,
+          "sessionToken": main.sessionToken
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -73,6 +76,7 @@ class _InitialBetsState extends State<InitialBets>
         },
         body: json.encode({
           "ID": main.userID,
+          "sessionToken": main.sessionToken,
           "championBet": _championBet,
           "topScorerBet": _topScorerBet
         }),

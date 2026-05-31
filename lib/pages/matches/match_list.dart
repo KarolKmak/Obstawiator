@@ -99,9 +99,10 @@ class _MatchListState extends State<MatchList> {
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': main.sessionToken ?? '',
           },
-          body: jsonEncode(<String, int?>{
+          body: jsonEncode(<String, dynamic>{
             'matchID': match.ID,
             'ID': main.userID,
+            'sessionToken': main.sessionToken,
           }),
         );
 
@@ -135,8 +136,9 @@ class _MatchListState extends State<MatchList> {
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': main.sessionToken ?? '',
       },
-      body: jsonEncode(<String, int?>{
+      body: jsonEncode(<String, dynamic>{
         'ID': main.userID,
+        'sessionToken': main.sessionToken,
       }),
     );
     if (response.statusCode == 200) {
@@ -170,6 +172,7 @@ class _MatchListState extends State<MatchList> {
         // ignore: unnecessary_string_interpolations
         // ignore: avoid_print
         'ID': main.userID,
+        'sessionToken': main.sessionToken,
         'finishedMatchesOffset': _finishedMatchesOffset,
       }),
     );

@@ -52,7 +52,10 @@ class _MyHomePageState extends State<MyHomePage>
           'Content-Type': 'application/json',
           'Authorization': main.sessionToken ?? '',
         },
-        body: json.encode({"ID": main.userID}),
+        body: json.encode({
+          "ID": main.userID,
+          "sessionToken": main.sessionToken
+        }),
       );
 
       if (response.statusCode == 200) {

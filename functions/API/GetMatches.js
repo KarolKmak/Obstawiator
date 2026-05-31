@@ -8,7 +8,9 @@ export async function onRequestPost(context) {
     }
 
     const db = context.env.obstawiatorDB;
-    const sessionToken = context.request.headers.get("Authorization");
+    let sessionToken = context.request.headers.get("Authorization");
+    if (!sessionToken && reqBody.sessionToken) sessionToken = reqBody.sessionToken;
+
     const userID = parseInt(reqBody.ID);
 
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")

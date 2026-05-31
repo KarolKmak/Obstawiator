@@ -63,7 +63,11 @@ class _MatchBetsState extends State<MatchBets> {
           "Content-Type": "application/json",
           "Authorization": main.sessionToken ?? "",
         },
-        body: json.encode({'matchID': widget.matchID, 'ID': main.userID}),
+        body: json.encode({
+          'matchID': widget.matchID,
+          'ID': main.userID,
+          'sessionToken': main.sessionToken
+        }),
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -136,6 +140,7 @@ class _MatchBetsState extends State<MatchBets> {
       final body = json.encode({
         'matchID': widget.matchID,
         'ID': main.userID,
+        'sessionToken': main.sessionToken,
         'homeScore': int.tryParse(homeScore),
         'awayScore': int.tryParse(awayScore),
         'winner': winner
