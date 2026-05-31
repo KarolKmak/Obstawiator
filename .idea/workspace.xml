@@ -4,19 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e9824433-56db-418f-98b0-77ea81fa0907" name="Changes" comment="refactor">
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/obstawiator_android.iml" beforeDir="false" afterPath="$PROJECT_DIR$/android/obstawiator_android.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/API/GetMainTable.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/GetMainTable.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/API/GetMatches.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/GetMatches.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/API/InitialBets.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/InitialBets.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/API/IsMyBetPlaced.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/IsMyBetPlaced.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/API/Login.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/Login.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/API/Register.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/Register.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/obstawiator.iml" beforeDir="false" afterPath="$PROJECT_DIR$/obstawiator.iml" afterDir="false" />
-    </list>
+    <list default="true" id="e9824433-56db-418f-98b0-77ea81fa0907" name="Changes" comment="refactor" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -40,12 +28,12 @@
     &quot;accountId&quot;: &quot;8596d1c6-551f-490a-bde7-8ed9c8544fd0&quot;
   }
 }</component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "deploy"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;deploy__ready&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Flutter.main.dart">
     <configuration name="gradlew" type="ShConfigurationType" temporary="true">
       <option name="SCRIPT_TEXT" value="" />
