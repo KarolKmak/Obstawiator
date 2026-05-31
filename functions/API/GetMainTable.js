@@ -1,25 +1,32 @@
-export async function onRequestPost(context)
-{
-  let reqBody = {};
-  try
-  {
-    reqBody = await context.request.json();
-  }
-  catch(e)
-  {
-    return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
-  }
-  const checkUserID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
-  const checkResult = await checkUserID.run();
-  console.log(checkResult.results);
-  if(checkResult.results.length>0)
-  {
-    const stmt = context.env.obstawiatorDB.prepare("SELECT UserScores.ID, UserScores.championBet, UserScores.topScorerBet, UserScores.points, Users.name FROM UserScores INNER JOIN Users ON UserScores.ID=Users.ID ORDER BY UserScores.points DESC");
+export async function onRequestPost(context) {
+  try {
+    let reqBody = {};
+    try {
+      reqBody = await context.request.json();
+    } catch (e) {
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    const db = context.env.obstawiatorDB;
+    const sessionToken = context.request.headers.get("Authorization");
+
+    // Weryfikacja sesji
+    const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
+      .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
+
+    if (!user) {
+      return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
+    const stmt = db.prepare("SELECT UserScores.ID, UserScores.championBet, UserScores.topScorerBet, UserScores.points, Users.name FROM UserScores INNER JOIN Users ON UserScores.ID=Users.ID ORDER BY UserScores.points DESC");
     const returnValue = await stmt.run();
-    return Response.json(returnValue.results)
-  }
-  else
-  {
-    return Response.json({message:"Nieznany użytkownik. Zarejestruj się, lub zaloguj na prawidłowego użytkownika"}, {status: 401});
+
+    return new Response(JSON.stringify(returnValue.results), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({ message: "Błąd serwera: " + error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }

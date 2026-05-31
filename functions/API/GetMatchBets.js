@@ -1,31 +1,34 @@
-export async function onRequestPost(context)
-{
-  let reqBody = {};
-  try
-  {
-    reqBody = await context.request.json();
-  }
-  catch(e)
-  {
-    return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
-  }
-  const checkUserID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
-  const checkResult = await checkUserID.run();
-  console.log(checkResult.results);
-  if(checkResult.results.length>0)
-  {
+export async function onRequestPost(context) {
+  try {
+    let reqBody = {};
+    try {
+      reqBody = await context.request.json();
+    } catch (e) {
+      return new Response("Invalid JSON", { status: 400 });
+    }
 
-    const getMatchBets = context.env.obstawiatorDB.prepare("SELECT BetMatch.homeScore, BetMatch.awayScore, Users.name, BetMatch.winner FROM BetMatch INNER JOIN Users ON BetMatch.userID=Users.ID WHERE BetMatch.matchID = ? AND BetMatch.userID != ?").bind(reqBody.matchID, reqBody.ID);
+    const db = context.env.obstawiatorDB;
+    const sessionToken = context.request.headers.get("Authorization");
+
+    const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
+      .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
+
+    if (!user) {
+      return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
+    const getMatchBets = db.prepare("SELECT BetMatch.homeScore, BetMatch.awayScore, Users.name, BetMatch.winner FROM BetMatch INNER JOIN Users ON BetMatch.userID=Users.ID WHERE BetMatch.matchID = ? AND BetMatch.userID != ?").bind(reqBody.matchID, reqBody.ID);
     const getMatchBetsResult = await getMatchBets.run();
 
-    const getUserBet = context.env.obstawiatorDB.prepare("SELECT homeScore, awayScore, winner FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
+    const getUserBet = db.prepare("SELECT homeScore, awayScore, winner FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
     const getUserBetResult = await getUserBet.run();
 
-    return Response.json({userBet: getUserBetResult.results[0], matchBets: getMatchBetsResult.results}, {status: 200});
+    return new Response(JSON.stringify({ userBet: getUserBetResult.results[0], matchBets: getMatchBetsResult.results }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
 
-  }
-  else
-  {
-    return Response.json({message:"Nieznany użytkownik. Zarejestruj się, lub zaloguj na prawidłowego użytkownika"}, {status: 401});
+  } catch (error) {
+    return new Response(JSON.stringify({ message: "Błąd serwera: " + error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
