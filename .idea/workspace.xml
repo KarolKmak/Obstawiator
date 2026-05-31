@@ -22,19 +22,19 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RESET_MODE" value="HARD" />
   </component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/KarolKmak/Obstawiator",
-    "accountId": "8596d1c6-551f-490a-bde7-8ed9c8544fd0"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/KarolKmak/Obstawiator&quot;,
+    &quot;accountId&quot;: &quot;8596d1c6-551f-490a-bde7-8ed9c8544fd0&quot;
   }
-}]]></component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "deploy__ready"
+}</component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;deploy__ready&quot;
   }
-}]]></component>
-  <component name="RunManager">
+}</component>
+  <component name="RunManager" selected="Flutter.main.dart">
     <configuration name="gradlew" type="ShConfigurationType" temporary="true">
       <option name="SCRIPT_TEXT" value="" />
       <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
@@ -52,6 +52,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Shell Script.gradlew" />
         <item itemvalue="Shell Script.gradlew" />
       </list>
     </recent_temporary>

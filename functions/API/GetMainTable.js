@@ -8,7 +8,12 @@ export async function onRequestPost(context) {
     }
 
     const db = context.env.obstawiatorDB;
+    // Nagłówki są case-insensitive, ale .get() obsłuży to za nas
     const sessionToken = context.request.headers.get("Authorization");
+
+    if (!sessionToken) {
+      return new Response(JSON.stringify({ message: "Brak nagłówka autoryzacji" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
 
     // Weryfikacja sesji
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
