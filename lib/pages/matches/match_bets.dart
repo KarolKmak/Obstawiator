@@ -291,8 +291,8 @@ class _MatchBetsState extends State<MatchBets> {
     // Show warning if no bet is placed and the match is less than 2 hours away, but not if it's less than 0 minutes away
     final bool showWarning = userBet == null && timeToMatch.inHours < 2 && timeToMatch.inMinutes > 0;
     return Scaffold(
-      appBar: main.titleBar(context),
-      bottomNavigationBar: main.navigationBar(context),
+      appBar: const main.ObstawiatorAppBar(),
+      bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 1),
       body: Padding(
         padding: const EdgeInsets.only(bottom: 16.0), // Keep bottom padding, remove others for Container
         child: Column(

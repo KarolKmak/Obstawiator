@@ -77,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage>
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: main.titleBar(context),
+      appBar: const main.ObstawiatorAppBar(),
       body: Center(
         child: SizedBox.expand(
           child: LayoutBuilder(
@@ -99,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage>
           ),
         ),
       ),
-      bottomNavigationBar: main.navigationBar(context),
+      bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 0),
     );
   }
   void _handleRowTap(int id) {
