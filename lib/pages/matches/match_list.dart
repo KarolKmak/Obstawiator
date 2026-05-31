@@ -206,7 +206,7 @@ class _MatchListState extends State<MatchList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold( // Opakowanie widżetem Scaffold
-      appBar: const main.ObstawiatorAppBar(),
+      appBar: main.titleBar(context),
       body: Material( // Opakowanie widżetem Material
         color: Theme.of(context).colorScheme.surface, // Ustawienie koloru tła
         child: Center( // Wyśrodkowanie ListView
@@ -306,7 +306,7 @@ class _MatchListState extends State<MatchList> {
               icon: const Icon(Icons.download),
             )
           : const SizedBox.shrink(), // Use SizedBox.shrink() to make the button completely invisible
-      bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 1),
+      bottomNavigationBar: main.navigationBar(context),
     );
   }
 }

@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: const main.ObstawiatorAppBar(),
+      appBar: main.titleBar(context),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
