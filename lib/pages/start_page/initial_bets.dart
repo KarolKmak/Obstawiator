@@ -54,7 +54,7 @@ class _InitialBetsState extends State<InitialBets>
   Widget build(BuildContext context)
   {
     return Scaffold(
-      appBar: main.titleBar(context),
+      appBar: const main.ObstawiatorAppBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
