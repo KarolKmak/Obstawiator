@@ -55,7 +55,7 @@ export async function onRequestPost(context) {
 
     // Generowanie tokena sesji (ważny miesiąc)
     const sessionToken = crypto.randomUUID();
-    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 dni
+    const expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 dni w ms
 
     // Zapis do bazy
     await db.batch([

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:obstawiator/pages/main_table/table_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:obstawiator/pages/start_page/login_page.dart';
 
@@ -22,6 +23,23 @@ class _MyHomePageState extends State<MyHomePage>
 
   Future<void> fetchData() async
   {
+    // Przywróć sesję, jeśli została utracona (np. po odświeżeniu strony)
+    if (main.userID == null || main.sessionToken == null) {
+      final prefs = await SharedPreferences.getInstance();
+      main.userID = prefs.getInt('userID');
+      main.sessionToken = prefs.getString('sessionToken');
+    }
+
+    if (main.userID == null || main.sessionToken == null) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+      return;
+    }
+
     setState(() {
       userStandingsTable.clear();
     });

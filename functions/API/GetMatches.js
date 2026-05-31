@@ -9,9 +9,10 @@ export async function onRequestPost(context) {
 
     const db = context.env.obstawiatorDB;
     const sessionToken = context.request.headers.get("Authorization");
+    const userID = parseInt(reqBody.ID);
 
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
-      .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
+      .bind(userID, sessionToken, Date.now()).first();
 
     if (user) {
       if (reqBody.finishedMatchesOffset !== undefined && reqBody.finishedMatchesOffset !== null) {
