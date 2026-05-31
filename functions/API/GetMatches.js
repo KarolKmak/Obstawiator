@@ -15,13 +15,11 @@ export async function onRequestPost(context) {
 
     if (user) {
       if (reqBody.finishedMatchesOffset != null) {
-        const stmt = db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage, winner FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset);
-        const returnValue = await stmt.run();
-        return new Response(JSON.stringify(returnValue.results), { status: 200, headers: { "Content-Type": "application/json" } });
+        const { results } = await db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage, winner FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset).all();
+        return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       } else {
-        const stmt = db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage FROM Matches WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT 10");
-        const returnValue = await stmt.run();
-        return new Response(JSON.stringify(returnValue.results), { status: 200, headers: { "Content-Type": "application/json" } });
+        const { results } = await db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage FROM Matches WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT 10").all();
+        return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     } else {
       return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
