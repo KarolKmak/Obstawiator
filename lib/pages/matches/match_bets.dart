@@ -25,8 +25,7 @@ class MatchBets extends StatefulWidget {
     required this.betVisible,
     required this.isGroupStage,
     required this.winner,
-  })  : otherUsersBetsData = [],
-        userBetData = null {
+  }) {
     // Print all passed values
     print('MatchBets constructor called with:');
     print('  matchID: $matchID');
@@ -40,9 +39,6 @@ class MatchBets extends StatefulWidget {
     print('  winner: $winner');
   }
 
-
-  Map<String, dynamic>? userBetData;
-  List<Map<String, dynamic>> otherUsersBetsData = [];
 
   @override
   _MatchBetsState createState() => _MatchBetsState();
