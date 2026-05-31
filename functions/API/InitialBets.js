@@ -12,7 +12,7 @@ export async function onRequestPost(context) {
 
     // Weryfikacja sesji
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
-      .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
+      .bind(reqBody.ID, sessionToken, Date.now()).first();
 
     if (!user) {
       return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
