@@ -57,12 +57,12 @@ export async function onRequestPost(context) {
     const sessionToken = crypto.randomUUID();
     const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 dni
 
-    // Zapis do bazy - używamy transakcji (batch) dla bezpieczeństwa
+    // Zapis do bazy
     await db.batch([
       db.prepare("INSERT INTO Users (ID, name, email, password, sessionToken, tokenExpires) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(newID, name, email.toLowerCase(), hashedPassword, sessionToken, expiresAt),
-      db.prepare("INSERT INTO UserScores (ID, userID, points, betChanged) VALUES (?, ?, ?, ?)")
-        .bind(newID, newID, 0, 0)
+      db.prepare("INSERT INTO UserScores (ID, points, betChanged) VALUES (?, ?, ?)")
+        .bind(newID, 0, 0)
     ]);
 
     return new Response(JSON.stringify({ message: "Zarejestrowano użytkownika", result: 0, userID: newID, sessionToken: sessionToken }), {
