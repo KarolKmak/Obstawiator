@@ -51,43 +51,43 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  Future<void> login()
-  async {
-    if (_formKey.currentState!.validate())
-    {
-      var headers =
-      {
-        'Content-Type': 'application/json'
-      };
+  Future<void> login() async {
+    if (_formKey.currentState!.validate()) {
       var url = Uri.parse("https://obstawiator.pages.dev/API/Login");
-      var request = http.Request('POST', url);
-      request.body = json.encode({"email": _emailController.text.toLowerCase(), "password": _passwordController.text});
-      request.headers.addAll(headers);
-      http.StreamedResponse response = await request.send();
-      var result = await response.stream.bytesToString();
-      var resultJSON = json.decode(result);
-      if(response.statusCode == 200)
-      {
-        main.userID = resultJSON['userID'];
-        main.sessionToken = resultJSON['sessionToken'];
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            "email": _emailController.text.toLowerCase(),
+            "password": _passwordController.text
+          }),
+        );
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('userID', main.userID!);
-        await prefs.setString('sessionToken', main.sessionToken!);
+        var resultJSON = json.decode(response.body);
+        if (response.statusCode == 200) {
+          main.userID = resultJSON['userID'];
+          main.sessionToken = resultJSON['sessionToken'];
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultJSON['message'])),
-        );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
-        );
-      }
-      else
-      {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultJSON['message'])),
-        );
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('userID', main.userID!);
+          await prefs.setString('sessionToken', main.sessionToken!);
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(resultJSON['message'])),
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+          );
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(resultJSON['message'])),
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) print("Login error: $e");
       }
     }
   }

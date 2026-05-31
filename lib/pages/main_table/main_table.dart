@@ -21,50 +21,50 @@ class _MyHomePageState extends State<MyHomePage>
 
   Future<void> fetchData() async
   {
-    // Clear existing data before fetching new data
     setState(() {
       userStandingsTable.clear();
     });
-    var headers =
-    {
-      'Content-Type': 'application/json'
-    };
-    var url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
-    var request = http.Request('POST', url);
-    request.headers.addAll({
-      'Content-Type': 'application/json',
-      'Authorization': main.sessionToken ?? '',
-    });
-    request.body = json.encode({"ID": main.userID});
-    request.headers.addAll(headers);
-    http.StreamedResponse response = await request.send();
 
-    if(response.statusCode == 200)
-    {
-      var jsonData = jsonDecode(await response.stream.bytesToString()) as List;
-      for (var i=0; i<jsonData.length; i++)
-      {
-        int id = jsonData[i]['ID'] ?? 'N/A';
-        // Ensure that values are not null before adding to the table
-        String name = jsonData[i]['name'] ?? 'N/A';
-        String championBet = jsonData[i]['championBet'] ?? 'N/A';
-        String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
-        int points = jsonData[i]['points'] ?? 0;
-        setState((){userStandingsTable.add(UserStandings(ID: id, name: name, championbet: championBet, topscorer: topScorerBet, points: points));});
-      }
-    }
-    else
-    {
-      if (kDebugMode) {
-        print("Failed, status: ${response.statusCode}");
-      }
-      final scaffold = ScaffoldMessenger.of(context);
-      scaffold.showSnackBar(
-        SnackBar(
-          content: const Text('No nie działa... co ci poradzę?'),
-          action: SnackBarAction(label: 'No ok...', onPressed: scaffold.hideCurrentSnackBar),
-        ),
+    final url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': main.sessionToken ?? '',
+        },
+        body: json.encode({"ID": main.userID}),
       );
+
+      if (response.statusCode == 200) {
+        var jsonData = jsonDecode(response.body) as List;
+        for (var i = 0; i < jsonData.length; i++) {
+          int id = jsonData[i]['ID'] ?? 0;
+          String name = jsonData[i]['name'] ?? 'N/A';
+          String championBet = jsonData[i]['championBet'] ?? 'N/A';
+          String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
+          int points = jsonData[i]['points'] ?? 0;
+          setState(() {
+            userStandingsTable.add(UserStandings(
+                ID: id,
+                name: name,
+                championbet: championBet,
+                topscorer: topScorerBet,
+                points: points));
+          });
+        }
+      } else {
+        if (kDebugMode) {
+          print("Failed, status: ${response.statusCode}, body: ${response.body}");
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Błąd pobierania danych (401/403)')),
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print("Error fetching table: $e");
     }
   }
   @override
@@ -207,35 +207,39 @@ class _MyHomePageState extends State<MyHomePage>
                     return;
                   }
 
-                  var headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': main.sessionToken ?? '',
-                  };
                   var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
-                  var request = http.Request('POST', url);
-                  request.body = json.encode({
-                    "ID": main.userID,
-                    "championBet": currentChampion,
-                    "topScorerBet": currentTopScorer
-                  });
-                  request.headers.addAll(headers);
-
-                  http.StreamedResponse response = await request.send();
-
-                  if (response.statusCode == 201) {
-                    final responseBody = await response.stream.bytesToString();
-                    final decodedBody = jsonDecode(responseBody);
-                    final message = decodedBody['message'] ?? 'Zapisano pomyślnie!';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(message)),
+                  try {
+                    final response = await http.post(
+                      url,
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': main.sessionToken ?? '',
+                      },
+                      body: json.encode({
+                        "ID": main.userID,
+                        "championBet": currentChampion,
+                        "topScorerBet": currentTopScorer
+                      }),
                     );
 
-                    fetchData(); // Refresh the table data
-                    Navigator.of(context).pop();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Błąd zapisu: ${response.reasonPhrase}')),
-                    );
+                    if (response.statusCode == 201) {
+                      final decodedBody = jsonDecode(response.body);
+                      final message = decodedBody['message'] ?? 'Zapisano pomyślnie!';
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(message)),
+                      );
+
+                      fetchData(); // Refresh the table data
+                      Navigator.of(context).pop();
+                    } else {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Błąd zapisu: ${response.statusCode}')),
+                      );
+                    }
+                  } catch (e) {
+                    if (kDebugMode) print("Update bets error: $e");
                   }
                 },
               ),

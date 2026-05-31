@@ -61,34 +61,39 @@ class _InitialBetsState extends State<InitialBets>
     }
   }
 
-  Future<void> _submitBets() async
-  {
-    var headers =
-    {
-      'Content-Type': 'application/json',
-      'Authorization': main.sessionToken ?? '',
-    };
+  Future<void> _submitBets() async {
     var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
-    var request = http.Request('POST', url);
-    request.body = json.encode({"ID": main.userID, "championBet": _championBet, "topScorerBet": _topScorerBet});
-    request.headers.addAll(headers);
-    http.StreamedResponse response = await request.send();
-    var result = await response.stream.bytesToString();
-    var resultJSON = json.decode(result);
-    if(response.statusCode == 201)
-    {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultJSON['message'])),
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': main.sessionToken ?? '',
+        },
+        body: json.encode({
+          "ID": main.userID,
+          "championBet": _championBet,
+          "topScorerBet": _topScorerBet
+        }),
       );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
-      );
-    }
-    else
-    {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultJSON['message'])),
-      );
+
+      var resultJSON = json.decode(response.body);
+      if (response.statusCode == 201) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'])),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'])),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) print("Submit initial bets error: $e");
     }
     print('Champion Bet: $_championBet');
     print('Top Scorer Bet: $_topScorerBet');

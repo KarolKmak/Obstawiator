@@ -34,38 +34,45 @@ class _RegistrationPageState extends State<RegistrationPage> {
   }
 
   Future<void> register() async {
-    var headers =
-    {
-      'Content-Type': 'application/json'
-    };
     var url = Uri.parse("https://obstawiator.pages.dev/API/Register");
-    var request = http.Request('POST', url);
-    request.body = json.encode({"email": _emailController.text.toLowerCase(), "password": _passwordController.text, "token": _tokenController.text, "name": _usernameController.text});
-    request.headers.addAll(headers);
-    http.StreamedResponse response = await request.send();
-    if (response.statusCode == 201)
-    {
-      var result = await response.stream.bytesToString();
-      var resultJSON = json.decode(result);
-      main.userID = resultJSON['userID'];
-      main.sessionToken = resultJSON['sessionToken'];
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('userID', main.userID!);
-      await prefs.setString('sessionToken', main.sessionToken!);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultJSON['message'])),
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          "email": _emailController.text.toLowerCase(),
+          "password": _passwordController.text,
+          "token": _tokenController.text,
+          "name": _usernameController.text
+        }),
       );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const InitialBets()),
-      );
-    }
-    else
-    {
-    }
 
+      if (response.statusCode == 201) {
+        var resultJSON = json.decode(response.body);
+        main.userID = resultJSON['userID'];
+        main.sessionToken = resultJSON['sessionToken'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('userID', main.userID!);
+        await prefs.setString('sessionToken', main.sessionToken!);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'])),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InitialBets()),
+        );
+      } else {
+        if (!mounted) return;
+        var resultJSON = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'] ?? "Błąd rejestracji")),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) print("Registration error: $e");
+    }
   }
     @override
     Widget build(BuildContext context)
