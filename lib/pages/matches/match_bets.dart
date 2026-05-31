@@ -63,7 +63,10 @@ class _MatchBetsState extends State<MatchBets> {
     try {
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": main.sessionToken ?? "",
+        },
         body: json.encode({'matchID': widget.matchID, 'ID': main.userID}),
       );
       if (response.statusCode == 200) {
@@ -144,7 +147,10 @@ class _MatchBetsState extends State<MatchBets> {
       print('Submitting bet with body: $body'); // Print the body here
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": main.sessionToken ?? "",
+        },
         body: body,
       );
       if (response.statusCode == 201) {

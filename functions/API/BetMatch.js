@@ -9,12 +9,23 @@ export async function onRequestPost(context)
   {
     return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
   }
-  const checkUserID = context.env.obstawiatorDB.prepare("SELECT ID FROM Users WHERE ID = ?").bind(reqBody.ID);
-  const checkResult = await checkUserID.run();
-  console.log(checkResult.results);
-  if(checkResult.results.length>0)
+
+  const db = context.env.obstawiatorDB;
+  const sessionToken = context.request.headers.get("Authorization");
+
+  if (!sessionToken) {
+    return Response.json({message: "Brak autoryzacji"}, {status: 401});
+  }
+
+  const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
+      .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
+
+  if(!user)
   {
-    const getTime = context.env.obstawiatorDB.prepare("SELECT matchStart FROM Matches WHERE ID = ?").bind(reqBody.matchID);
+    return Response.json({message:"Sesja wygasła lub nieprawidłowa. Zaloguj się ponownie."}, {status: 401});
+  }
+
+  const getTime = db.prepare("SELECT matchStart FROM Matches WHERE ID = ?").bind(reqBody.matchID);
     const getTimeResult = await getTime.run();
     //Sprawdzanie czy gra się jeszcze nie rozpoczęła
     if(Date.now() > getTimeResult.results[0].matchStart)

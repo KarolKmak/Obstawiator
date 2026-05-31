@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:obstawiator/utils/notification_helper.dart';
 import 'package:obstawiator/pages/main_table/main_table.dart';
 import 'package:obstawiator/pages/matches/match_list.dart';
 import 'package:obstawiator/pages/start_page/login_page.dart';
@@ -9,10 +12,12 @@ import 'package:obstawiator/pages/start_page/login_page.dart';
 
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
 int? userID;
+String? sessionToken;
 
 class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -40,25 +45,51 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 applicationName: 'Obstawiator',
                 applicationVersion: '1.0.0',
               );
+            } else if (value == 'powiadomienia') {
+              if (kIsWeb) {
+                requestWebNotificationPermission();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
+                );
+              }
             }
           },
           itemBuilder: (BuildContext context) => [
             const PopupMenuItem<String>(
+              value: 'powiadomienia',
+              child: ListTile(
+                leading: Icon(Icons.notifications_active),
+                title: Text('Powiadomienia iPhone'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            const PopupMenuItem<String>(
               value: 'licencje',
-              child: Text('Licencje'),
+              child: ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('Licencje'),
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
           ],
         ),
         IconButton(
           icon: const Icon(Icons.logout),
           tooltip: 'Wyloguj',
-          onPressed: () {
+          onPressed: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('userID');
+            await prefs.remove('sessionToken');
             userID = null;
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginPage()),
-              (route) => false,
-            );
+            sessionToken = null;
+            if (context.mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+              );
+            }
           },
         ),
       ],

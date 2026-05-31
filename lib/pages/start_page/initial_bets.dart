@@ -22,7 +22,8 @@ class _InitialBetsState extends State<InitialBets>
   {
     var headers =
     {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': main.sessionToken ?? '',
     };
     var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
     var request = http.Request('POST', url);

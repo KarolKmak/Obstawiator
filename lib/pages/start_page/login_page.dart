@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:obstawiator/pages/main_table/main_table.dart' as main_table;
 import 'package:obstawiator/pages/start_page/registration_page.dart' as registration;
@@ -20,6 +21,28 @@ class _LoginPageState extends State<LoginPage>
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUserId = prefs.getInt('userID');
+    final savedToken = prefs.getString('sessionToken');
+
+    if (savedUserId != null && savedToken != null) {
+      main.userID = savedUserId;
+      main.sessionToken = savedToken;
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+        );
+      }
+    }
+  }
 
   void register()
   {
@@ -46,6 +69,13 @@ class _LoginPageState extends State<LoginPage>
       if(response.statusCode == 200)
       {
         main.userID = resultJSON['userID'];
+        main.sessionToken = resultJSON['sessionToken'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('userID', main.userID!);
+        await prefs.setString('sessionToken', main.sessionToken!);
+
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(resultJSON['message'])),
         );

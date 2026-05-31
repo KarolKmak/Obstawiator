@@ -31,6 +31,10 @@ class _MyHomePageState extends State<MyHomePage>
     };
     var url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
     var request = http.Request('POST', url);
+    request.headers.addAll({
+      'Content-Type': 'application/json',
+      'Authorization': main.sessionToken ?? '',
+    });
     request.body = json.encode({"ID": main.userID});
     request.headers.addAll(headers);
     http.StreamedResponse response = await request.send();
@@ -156,7 +160,8 @@ class _MyHomePageState extends State<MyHomePage>
                   }
 
                   var headers = {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': main.sessionToken ?? '',
                   };
                   var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
                   var request = http.Request('POST', url);

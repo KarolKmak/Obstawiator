@@ -52,12 +52,16 @@ export async function onRequestPost(context) {
   const lastUser = await db.prepare("SELECT MAX(ID) as ID FROM Users").first();
   const newID = (lastUser?.ID || 0) + 1;
 
+  // Generowanie tokena sesji (ważny miesiąc)
+  const sessionToken = crypto.randomUUID();
+  const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 dni
+
   // Zapis do bazy
-  await db.prepare("INSERT INTO Users (ID, name, email, password) VALUES (?, ?, ?, ?)")
-    .bind(newID, name, email.toLowerCase(), hashedPassword).run();
+  await db.prepare("INSERT INTO Users (ID, name, email, password, sessionToken, tokenExpires) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(newID, name, email.toLowerCase(), hashedPassword, sessionToken, expiresAt).run();
 
   await db.prepare("INSERT INTO UserScores (ID, userID, points) VALUES (?, ?, ?)")
     .bind(newID, newID, 0).run();
 
-  return Response.json({ message: "Zarejestrowano użytkownika", result: 0, userID: newID }, { status: 201 });
+  return Response.json({ message: "Zarejestrowano użytkownika", result: 0, userID: newID, sessionToken: sessionToken }, { status: 201 });
 }

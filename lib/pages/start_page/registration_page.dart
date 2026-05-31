@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:obstawiator/utils/notification_helper.dart';
 import 'package:obstawiator/pages/start_page/initial_bets.dart';
 import 'package:obstawiator/pages/start_page/login_page.dart';
 import 'package:obstawiator/main.dart' as main;
@@ -20,6 +23,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _tokenController = TextEditingController();
 
+  void _requestNotificationPermission() {
+    if (kIsWeb) {
+      requestWebNotificationPermission();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
+      );
+    }
+  }
+
   Future<void> register() async {
     var headers =
     {
@@ -35,6 +48,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
       var result = await response.stream.bytesToString();
       var resultJSON = json.decode(result);
       main.userID = resultJSON['userID'];
+      main.sessionToken = resultJSON['sessionToken'];
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('userID', main.userID!);
+      await prefs.setString('sessionToken', main.sessionToken!);
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(resultJSON['message'])),
       );
@@ -144,6 +164,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _requestNotificationPermission,
+                      icon: const Icon(Icons.notifications_active),
+                      label: const Text('Włącz powiadomienia (iPhone)'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Colors.orangeAccent),
+                        foregroundColor: Colors.orangeAccent,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(

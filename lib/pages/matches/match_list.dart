@@ -97,6 +97,7 @@ class _MatchListState extends State<MatchList> {
           Uri.parse('https://obstawiator.pages.dev/API/IsMyBetPlaced'), // Corrected API endpoint
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': main.sessionToken ?? '',
           },
           body: jsonEncode(<String, int?>{
             'matchID': match.ID,
@@ -132,6 +133,7 @@ class _MatchListState extends State<MatchList> {
       Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': main.sessionToken ?? '',
       },
       body: jsonEncode(<String, int?>{
         'ID': main.userID,
@@ -162,8 +164,9 @@ class _MatchListState extends State<MatchList> {
       Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': main.sessionToken ?? '',
       },
-      body: jsonEncode(<String, int?>{
+      body: jsonEncode(<String, dynamic>{
         // ignore: unnecessary_string_interpolations
         // ignore: avoid_print
         'ID': main.userID,

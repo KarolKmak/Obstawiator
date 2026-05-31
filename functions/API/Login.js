@@ -38,7 +38,14 @@ export async function onRequestPost(context) {
     const isValid = crypto.subtle.timingSafeEqual(storedHash, derivedHash);
 
     if (isValid) {
-      return Response.json({ message: "Zalogowano pomyślnie", userID: user.ID }, { status: 200 });
+      // Generowanie nowego tokena sesji
+      const sessionToken = crypto.randomUUID();
+      const expiresAt = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 dni
+
+      await db.prepare("UPDATE Users SET sessionToken = ?, tokenExpires = ? WHERE ID = ?")
+          .bind(sessionToken, expiresAt, user.ID).run();
+
+      return Response.json({ message: "Zalogowano pomyślnie", userID: user.ID, sessionToken: sessionToken }, { status: 200 });
     }
   } catch (e) {
     console.error("Login verification error:", e);
