@@ -19,8 +19,8 @@ export async function onRequestPost(context) {
     }
 
     // Blokada czasowa (jeśli dotyczy Twojej logiki biznesowej)
-    if (Date.now() > 1751472000000) {
-      if (Date.now() < 1752692400000) {
+    if (Date.now() > 1781204400000) {
+      if (Date.now() < 1782673200000) {
         const checkIfChanged = await db.prepare("SELECT betChanged FROM UserScores WHERE ID = ?").bind(reqBody.ID).first();
 
         if (!checkIfChanged || checkIfChanged.betChanged == 0) {
