@@ -275,11 +275,11 @@ class _MyHomePageState extends State<MyHomePage>
       UserStandings e = entry.value;
       final bool isUserRow = e.ID == main.userID;
       final Color? rowColor = isUserRow
-          ? Colors.blue.withOpacity(0.1) // Light blue for user row
-          : (index % 2 == 0 ? Colors.grey.withOpacity(0.1) : null); // Light grey for even rows
+          ? Colors.blue.withValues(alpha: 0.1) // Light blue for user row
+          : (index % 2 == 0 ? Colors.grey.withValues(alpha: 0.1) : null); // Light grey for even rows
 
       DataRow rowWidget = DataRow(
-          color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
+          color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) => rowColor),
           cells: [
             DataCell(Text(e.name)),
             DataCell(Text(e.championbet)),
