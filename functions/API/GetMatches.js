@@ -10,11 +10,15 @@ export async function onRequestPost(context) {
     const db = context.env.obstawiatorDB;
     const sessionToken = context.request.headers.get("Authorization");
 
+    if (!sessionToken || !reqBody.ID) {
+      return new Response(JSON.stringify({ message: "Brak danych autoryzacyjnych (ID lub token)" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
       .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
 
     if (user) {
-      if (reqBody.finishedMatchesOffset != null) {
+      if (reqBody.finishedMatchesOffset !== undefined && reqBody.finishedMatchesOffset !== null) {
         const { results } = await db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage, winner FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset).all();
         return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       } else {

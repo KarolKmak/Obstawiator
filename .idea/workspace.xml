@@ -4,7 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e9824433-56db-418f-98b0-77ea81fa0907" name="Changes" comment="refactor" />
+    <list default="true" id="e9824433-56db-418f-98b0-77ea81fa0907" name="Changes" comment="Refactor API authorization and improve data parsing robustness&#10;&#10;This commit strengthens the backend API validation logic and improves the flexibility of match data parsing in the frontend.&#10;&#10;Backend changes:&#10;- Unified authorization checks across `BetMatch.js`, `GetMatchBets.js`, `IsMyBetPlaced.js`, `GetMatches.js`, and `GetMainTable.js` to explicitly validate both the session token and the user ID.&#10;- Refactored D1 database interactions to use consistent result destructuring from `.all()` calls.&#10;- Improved input validation in `GetMatches.js` to strictly check for both `null` and `undefined` offsets.&#10;- Updated `GetMainTable.js` SQL query to include an explicit alias for the user ID field.&#10;&#10;Frontend changes:&#10;- Enhanced `match_list.dart` parsing logic for `isGroupStage` to handle boolean, string, and integer types from the API response.">
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/obstawiator_android.iml" beforeDir="false" afterPath="$PROJECT_DIR$/android/obstawiator_android.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/functions/API/BetMatch.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/BetMatch.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/functions/API/GetMainTable.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/GetMainTable.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/functions/API/GetMatchBets.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/GetMatchBets.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/functions/API/GetMatches.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/GetMatches.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/functions/API/IsMyBetPlaced.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/API/IsMyBetPlaced.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/obstawiator.iml" beforeDir="false" afterPath="$PROJECT_DIR$/obstawiator.iml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,12 +39,12 @@
     &quot;accountId&quot;: &quot;8596d1c6-551f-490a-bde7-8ed9c8544fd0&quot;
   }
 }</component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;deploy__ready&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "deploy"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Flutter.main.dart">
     <configuration name="gradlew" type="ShConfigurationType" temporary="true">
       <option name="SCRIPT_TEXT" value="" />

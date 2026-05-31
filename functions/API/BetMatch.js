@@ -10,29 +10,27 @@ export async function onRequestPost(context) {
     const db = context.env.obstawiatorDB;
     const sessionToken = context.request.headers.get("Authorization");
 
-    if (!sessionToken) {
-      return new Response(JSON.stringify({ message: "Brak autoryzacji" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    if (!sessionToken || !reqBody.ID) {
+      return new Response(JSON.stringify({ message: "Brak danych autoryzacyjnych (ID lub token)" }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
       .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
 
     if (!user) {
-      return new Response(JSON.stringify({ message: "Sesja wygasła lub nieprawidłowa. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
-    const getTime = db.prepare("SELECT matchStart FROM Matches WHERE ID = ?").bind(reqBody.matchID);
-    const getTimeResult = await getTime.run();
+    const { results: matchResults } = await db.prepare("SELECT matchStart FROM Matches WHERE ID = ?").bind(reqBody.matchID).all();
 
     // Sprawdzanie czy gra się jeszcze nie rozpoczęła
-    if (Date.now() > getTimeResult.results[0].matchStart) {
+    if (Date.now() > matchResults[0].matchStart) {
       return new Response(JSON.stringify({ message: "Nie udało się dodać zakładu, za późno", result: 1 }), { status: 403, headers: { "Content-Type": "application/json" } });
     }
 
-    const checkIfBetPlaced = db.prepare("SELECT userID FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
-    const checkIfBetPlacedResult = await checkIfBetPlaced.run();
+    const { results: betPlacedResults } = await db.prepare("SELECT userID FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID).all();
 
-    if (checkIfBetPlacedResult.results.length > 0) {
+    if (betPlacedResults.length > 0) {
       let placeBet;
       if (reqBody.winner === 0 || reqBody.winner === 1) {
         placeBet = db.prepare("UPDATE BetMatch SET homeScore = ?, awayScore = ?, winner = ? WHERE userID = ? AND matchID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.winner, reqBody.ID, reqBody.matchID);

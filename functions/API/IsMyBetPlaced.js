@@ -10,6 +10,10 @@ export async function onRequestPost(context) {
     const db = context.env.obstawiatorDB;
     const sessionToken = context.request.headers.get("Authorization");
 
+    if (!sessionToken || !reqBody.ID) {
+      return new Response(JSON.stringify({ message: "Brak danych autoryzacyjnych (ID lub token)" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
     const user = await db.prepare("SELECT ID FROM Users WHERE ID = ? AND sessionToken = ? AND tokenExpires > ?")
       .bind(reqBody.ID, sessionToken, Math.floor(Date.now() / 1000)).first();
 
@@ -17,11 +21,10 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
-    const getUserBet = db.prepare("SELECT matchID FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID);
-    const getUserBetResult = await getUserBet.run();
+    const { results } = await db.prepare("SELECT matchID FROM BetMatch WHERE userID = ? AND matchID = ?").bind(reqBody.ID, reqBody.matchID).all();
 
-    if (getUserBetResult.results.length > 0) {
-      return new Response(JSON.stringify({ userBet: getUserBetResult.results[0] }), { status: 200, headers: { "Content-Type": "application/json" } });
+    if (results.length > 0) {
+      return new Response(JSON.stringify({ userBet: results[0] }), { status: 200, headers: { "Content-Type": "application/json" } });
     } else {
       return new Response(JSON.stringify({ userBet: null }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
