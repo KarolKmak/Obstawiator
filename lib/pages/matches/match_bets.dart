@@ -207,18 +207,20 @@ class _MatchBetsState extends State<MatchBets> {
                         ),
                       Row(
                         children: [
-                          Checkbox(
-                            value: dialogSelectedWinner == 0, // 0 for host
-                            onChanged: (bool? value) {
-                              setState(() {
-                                dialogSelectedWinner = value! ? 0 : null;
-                              });
-                            },
-                          ),
+                          if (!widget.isGroupStage)
+                            Checkbox(
+                              value: dialogSelectedWinner == 0, // 0 for host
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  dialogSelectedWinner = value! ? 0 : null;
+                                });
+                              },
+                            ),
                           Expanded(
                             child: TextField(
                               controller: homeScoreController,
                               keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: 16),
                               decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
                             ),
                           ),
@@ -226,18 +228,20 @@ class _MatchBetsState extends State<MatchBets> {
                       ),
                       Row(
                         children: [
-                          Checkbox(
-                            value: dialogSelectedWinner == 1, // 1 for guest
-                            onChanged: (bool? value) {
-                              setState(() {
-                                dialogSelectedWinner = value! ? 1 : null;
-                              });
-                            },
-                          ),
+                          if (!widget.isGroupStage)
+                            Checkbox(
+                              value: dialogSelectedWinner == 1, // 1 for guest
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  dialogSelectedWinner = value! ? 1 : null;
+                                });
+                              },
+                            ),
                           Expanded(
                             child: TextField(
                               controller: awayScoreController,
                               keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: 16),
                               decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
                             ),
                           ),

@@ -58,9 +58,19 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
                   const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
                 );
               }
+            } else if (value == 'regulamin') {
+              _showRulesDialog(context);
             }
           },
           itemBuilder: (BuildContext context) => [
+            const PopupMenuItem<String>(
+              value: 'regulamin',
+              child: ListTile(
+                leading: Icon(Icons.description_outlined),
+                title: Text('Regulamin'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
             const PopupMenuItem<String>(
               value: 'powiadomienia',
               child: ListTile(
@@ -98,6 +108,60 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
           },
         ),
       ],
+    );
+  }
+
+  void _showRulesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Regulamin i Punktacja'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Zasady Ogólne:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                  '• Typujemy wyniki meczów w regulaminowym czasie gry.\n'
+                  '• W fazie pucharowej dodatkowo wybieramy drużynę, która awansuje dalej.'),
+              SizedBox(height: 12),
+              Text(
+                'Punktacja - Faza Grupowa:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                  '• Dokładny wynik: 5 pkt\n'
+                  '• Rozstrzygnięcie i różnica bramek: 2 pkt\n'
+                  '• Tylko rozstrzygnięcie (zwycięzca/remis): 1 pkt'),
+              SizedBox(height: 12),
+              Text(
+                'Punktacja - Faza Pucharowa:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                  '• Wybór zwycięzcy (awans): 2 pkt\n'
+                  '• Dokładny wynik (90 min): 4 pkt\n'
+                  '• Możliwe zdobycie łącznie 6 pkt za mecz.'),
+              SizedBox(height: 12),
+              Text(
+                'Dodatkowe:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text('• Typy na Mistrza i Króla Strzelców należy oddać przed rozpoczęciem turnieju.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Zamknij'),
+          ),
+        ],
+      ),
     );
   }
 
