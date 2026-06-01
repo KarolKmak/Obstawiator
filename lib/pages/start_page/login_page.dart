@@ -120,6 +120,7 @@ class _LoginPageState extends State<LoginPage>
                     children: <Widget>[
                       TextFormField(
                         controller: _emailController,
+                        style: const TextStyle(fontSize: 16),
                         decoration: const InputDecoration(labelText: 'E-mail'),
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: [AutofillHints.newUsername, AutofillHints.username],
@@ -135,6 +136,7 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       TextFormField(
                         controller: _passwordController,
+                        style: const TextStyle(fontSize: 16),
                         decoration: const InputDecoration(labelText: 'Hasło'),
                         obscureText: true,
                         autofillHints: [AutofillHints.newPassword, AutofillHints.password],

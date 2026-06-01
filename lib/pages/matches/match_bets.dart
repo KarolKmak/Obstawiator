@@ -308,10 +308,8 @@ class _MatchBetsState extends State<MatchBets> {
             Container(
               width: double.infinity, // Make Container take full width
               padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0, bottom: 12.0), // Apply padding here
-              decoration: BoxDecoration(
-                color: Colors.blue[700], // Darker blue color
-                // No border radius for top and side coverage
-                // borderRadius: BorderRadius.circular(8.0),
+              decoration: const BoxDecoration(
+                color: Color(0xFF002868), // Deep Navy Blue
               ),
               child: DefaultTextStyle(
                 style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
@@ -326,17 +324,11 @@ class _MatchBetsState extends State<MatchBets> {
                             TextSpan(text: '${widget.host} '),
                             TextSpan(
                               text: '${widget.homeScore ?? '-'} : ${widget.awayScore ?? '-'}',
-                              style: TextStyle(color: Colors.amberAccent[100]), // Different color for scores
+                              style: const TextStyle(color: Color(0xFFFFD700)), // Gold score
                             ),
                             TextSpan(text: ' ${widget.guest}'),
                           ],
                         ),
-                        // Text(
-                        //   // '$host vs $guest',
-                        //   '$host ${homeScore ?? '-'} : ${awayScore ?? '-'} $guest',
-                        //
-                        //   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
-                        // ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),

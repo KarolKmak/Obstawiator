@@ -30,7 +30,7 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.blueAccent,
+      backgroundColor: const Color(0xFF002868), // Deep Navy Blue (USA)
       foregroundColor: Colors.white,
       centerTitle: true,
       title: Text(title),
@@ -149,7 +149,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Obstawiator',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF002868),
+          primary: const Color(0xFF002868),
+          secondary: const Color(0xFFBF0A30), // Red (Canada/USA)
+          tertiary: const Color(0xFF006847), // Green (Mexico)
+        ),
         useMaterial3: true,
       ),
       home: const LoginPage(),

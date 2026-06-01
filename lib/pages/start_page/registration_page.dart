@@ -98,6 +98,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _usernameController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'Nazwa użytkownika',
                       border: OutlineInputBorder(),
@@ -115,6 +116,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'E-mail',
                       border: OutlineInputBorder(),
@@ -136,6 +138,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'Hasło',
                       border: OutlineInputBorder(),
@@ -158,6 +161,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _tokenController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'Token',
                       border: OutlineInputBorder(),

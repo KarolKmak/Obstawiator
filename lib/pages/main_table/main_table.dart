@@ -192,6 +192,7 @@ class _MyHomePageState extends State<MyHomePage>
                           return TextField(
                             controller: controller,
                             focusNode: focusNode,
+                            style: const TextStyle(fontSize: 16),
                             decoration: const InputDecoration(labelText: 'Mistrz'),
                             onChanged: (value) => currentChampion = value,
                           );
@@ -215,6 +216,7 @@ class _MyHomePageState extends State<MyHomePage>
                           return TextField(
                             controller: controller,
                             focusNode: focusNode,
+                            style: const TextStyle(fontSize: 16),
                             decoration: const InputDecoration(labelText: 'Król strzelców'),
                             onChanged: (value) => currentTopScorer = value,
                           );
@@ -311,7 +313,7 @@ class _MyHomePageState extends State<MyHomePage>
       UserStandings e = entry.value;
       final bool isUserRow = e.ID == main.userID;
       final Color? rowColor = isUserRow
-          ? Colors.blue.withValues(alpha: 0.1) // Light blue for user row
+          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) // Light navy for user row
           : (index % 2 == 0 ? Colors.grey.withValues(alpha: 0.1) : null); // Light grey for even rows
 
       DataRow rowWidget = DataRow(
