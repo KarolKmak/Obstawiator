@@ -19,11 +19,17 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  final prefs = await SharedPreferences.getInstance();
+  final isDarkMode = prefs.getBool('isDarkMode') ?? false;
+  themeNotifier.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+
   runApp(const MyApp());
 }
 
 int? userID;
 String? sessionToken;
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
 class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -60,6 +66,8 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
               }
             } else if (value == 'regulamin') {
               _showRulesDialog(context);
+            } else if (value == 'dark_mode') {
+              _toggleDarkMode();
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -69,6 +77,20 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 leading: Icon(Icons.description_outlined),
                 title: Text('Regulamin'),
                 contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'dark_mode',
+              child: ValueListenableBuilder<ThemeMode>(
+                valueListenable: themeNotifier,
+                builder: (context, mode, child) {
+                  final isDark = mode == ThemeMode.dark;
+                  return ListTile(
+                    leading: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                    title: Text(isDark ? 'Tryb jasny' : 'Tryb ciemny'),
+                    contentPadding: EdgeInsets.zero,
+                  );
+                },
               ),
             ),
             const PopupMenuItem<String>(
@@ -109,6 +131,17 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ],
     );
+  }
+
+  void _toggleDarkMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (themeNotifier.value == ThemeMode.light) {
+      themeNotifier.value = ThemeMode.dark;
+      await prefs.setBool('isDarkMode', true);
+    } else {
+      themeNotifier.value = ThemeMode.light;
+      await prefs.setBool('isDarkMode', false);
+    }
   }
 
   void _showRulesDialog(BuildContext context) {
@@ -215,18 +248,43 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Obstawiator',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF002868),
-          primary: const Color(0xFF002868),
-          secondary: const Color(0xFFBF0A30), // Red (Canada/USA)
-          tertiary: const Color(0xFF006847), // Green (Mexico)
-        ),
-        useMaterial3: true,
-      ),
-      home: const LoginPage(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, currentMode, child) {
+        return MaterialApp(
+          title: 'Obstawiator',
+          themeMode: currentMode,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF002868),
+              primary: const Color(0xFF002868),
+              secondary: const Color(0xFFBF0A30), // Red (Canada/USA)
+              tertiary: const Color(0xFF006847), // Green (Mexico)
+              surface: Colors.white,
+            ),
+            useMaterial3: true,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF002868),
+              foregroundColor: Colors.white,
+            ),
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF002868),
+              primary: const Color(0xFF002868),
+              secondary: const Color(0xFFBF0A30),
+              tertiary: const Color(0xFF006847),
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF002868), // Keep consistent navy for dark mode too or slightly darker
+              foregroundColor: Colors.white,
+            ),
+          ),
+          home: const LoginPage(),
+        );
+      },
     );
   }
 }

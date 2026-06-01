@@ -286,7 +286,76 @@ class _MatchBetsState extends State<MatchBets> {
       },
     );
     fetchMatchBets(); // Keep this call if you also want to refresh on placeBet
-  }  @override
+  }  String getFlag(String countryName) {
+    switch (countryName.toLowerCase().trim()) {
+      case 'polska': return '🇵🇱';
+      case 'niemcy': return '🇩🇪';
+      case 'usa':
+      case 'stany zjednoczone': return '🇺🇸';
+      case 'kanada': return '🇨🇦';
+      case 'meksyk': return '🇲🇽';
+      case 'argentyna': return '🇦🇷';
+      case 'brazylia': return '🇧🇷';
+      case 'francja': return '🇫🇷';
+      case 'hiszpania': return '🇪🇸';
+      case 'anglia': return '🏴󠁧󠁢󠁥󠁮󠁧󠁿';
+      case 'portugalia': return '🇵🇹';
+      case 'włochy': return '🇮🇹';
+      case 'holandia': return '🇳🇱';
+      case 'belgia': return '🇧🇪';
+      case 'chorwacja': return '🇭🇷';
+      case 'urugwaj': return '🇺🇾';
+      case 'maroko': return '🇲🇦';
+      case 'szwajcaria': return '🇨🇭';
+      case 'dania': return '🇩🇰';
+      case 'japonia': return '🇯🇵';
+      case 'korea południowa': return '🇰🇷';
+      case 'senegal': return '🇸🇳';
+      case 'serbia': return '🇷🇸';
+      case 'austria': return '🇦🇹';
+      case 'szkocja': return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+      case 'turcja': return '🇹🇷';
+      case 'rumunia': return '🇷🇴';
+      case 'węgry': return '🇭🇺';
+      case 'słowacja': return '🇸🇰';
+      case 'słowenia': return '🇸🇮';
+      case 'czechy': return '🇨🇿';
+      case 'gruzja': return '🇬🇪';
+      case 'albania': return '🇦🇱';
+      case 'ukraina': return '🇺🇦';
+      case 'szwecja': return '🇸🇪';
+      case 'norwegia': return '🇳🇴';
+      case 'finlandia': return '🇫🇮';
+      case 'islandia': return '🇮🇸';
+      case 'walia': return '🏴󠁧󠁢󠁷󠁬󠁳󠁿';
+      case 'republika południowej afryki': return '🇿🇦';
+      case 'bośnia i hercegowina': return '🇧🇦';
+      case 'katar': return '🇶🇦';
+      case 'haiti': return '🇭🇹';
+      case 'paragwaj': return '🇵🇾';
+      case 'australia': return '🇦🇺';
+      case 'ekwador': return '🇪🇨';
+      case 'wybrzeże kości słoniowej': return '🇨🇮';
+      case 'curacao': return '🇨🇼';
+      case 'tunezja': return '🇹🇳';
+      case 'egipt': return '🇪🇬';
+      case 'iran': return '🇮🇷';
+      case 'nowa zelandia': return '🇳🇿';
+      case 'republika zielonego przylądka': return '🇨🇻';
+      case 'arabia saudyjska': return '🇸🇦';
+      case 'algieria': return '🇩🇿';
+      case 'jordania': return '🇯🇴';
+      case 'kolumbia': return '🇨🇴';
+      case 'demokratyczna republika kongo': return '🇨🇩';
+      case 'uzbekistan': return '🇺🇿';
+      case 'ghana': return '🇬🇭';
+      case 'panama': return '🇵🇦';
+      case 'irak': return '🇮🇶';
+      default: return '⚽';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final String? userBet = userBetData != null
         ? '${userBetData?['homeScore'] ?? '-'} : ${userBetData?['awayScore'] ?? '-'}'
@@ -325,12 +394,12 @@ class _MatchBetsState extends State<MatchBets> {
                         text: TextSpan(
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
                           children: <TextSpan>[
-                            TextSpan(text: '${widget.host} '),
+                            TextSpan(text: '${getFlag(widget.host)} ${widget.host} '),
                             TextSpan(
                               text: '${widget.homeScore ?? '-'} : ${widget.awayScore ?? '-'}',
                               style: const TextStyle(color: Color(0xFFFFD700)), // Gold score
                             ),
-                            TextSpan(text: ' ${widget.guest}'),
+                            TextSpan(text: ' ${widget.guest} ${getFlag(widget.guest)}'),
                           ],
                         ),
                         textAlign: TextAlign.center,
