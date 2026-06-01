@@ -44,6 +44,9 @@ class _MyHomePageState extends State<MyHomePage>
       userStandingsTable.clear();
     });
 
+      print("DEBUG fetchData: ID=${main.userID}, Token=${main.sessionToken}");
+
+
     final url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
     try {
       final response = await http.post(
@@ -249,6 +252,7 @@ class _MyHomePageState extends State<MyHomePage>
                       },
                       body: json.encode({
                         "ID": main.userID,
+                        "sessionToken": main.sessionToken,
                         "championBet": currentChampion,
                         "topScorerBet": currentTopScorer
                       }),
