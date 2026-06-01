@@ -11,8 +11,14 @@ import 'package:obstawiator/pages/start_page/login_page.dart';
 // Następnie ręcznie przenieś różnice do brancha "deploy"
 
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:obstawiator/firebase_options.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -46,9 +52,8 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
                 applicationVersion: '1.0.0',
               );
             } else if (value == 'powiadomienia') {
-              if (kIsWeb) {
-                requestWebNotificationPermission();
-              } else {
+              requestWebNotificationPermission();
+              if (!kIsWeb) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
                 );

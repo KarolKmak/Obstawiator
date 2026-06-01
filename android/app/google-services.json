@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "780751184961",
+    "project_id": "test-e45d6",
+    "storage_bucket": "test-e45d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:780751184961:android:3abb4ef2c0ae0982de12c0",
+        "android_client_info": {
+          "package_name": "com.example.obstawiator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWBYFKUUyyfPV442uCQW8Q8j0JQyIPp1k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

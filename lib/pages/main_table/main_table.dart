@@ -43,9 +43,7 @@ class _MyHomePageState extends State<MyHomePage>
     setState(() {
       userStandingsTable.clear();
     });
-
-      print("DEBUG fetchData: ID=${main.userID}, Token=${main.sessionToken}");
-
+    
 
     final url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
     try {
