@@ -7,6 +7,7 @@ export async function onRequestPost(context) {
 
     const userID = parseInt(reqBody.ID);
     const pushToken = reqBody.pushToken;
+    const platform = reqBody.platform || 'unknown';
 
     if (!userID || !sessionToken || !pushToken) {
       return new Response(JSON.stringify({ message: "Brak danych" }), { status: 400 });
@@ -20,15 +21,17 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ message: "Nieautoryzowany" }), { status: 401 });
     }
 
-    // Zapisz token w bazie (używamy REPLACE lub INSERT/UPDATE w zależności od silnika, tu SQLite w D1)
-    // Zakładamy, że mamy kolumnę pushToken w Users lub oddzielną tabelę.
-    // Dla uproszczenia dodajemy do tabeli Users lub aktualizujemy jeśli istnieje.
-    await db.prepare("UPDATE Users SET pushToken = ? WHERE ID = ?")
-      .bind(pushToken, userID).run();
+    // Używamy tabeli UserPushTokens, aby wspierać wiele urządzeń jednego użytkownika
+    // Najpierw usuwamy ten sam token jeśli istniał pod innym ID (rzadkie, ale możliwe)
+    await db.prepare("DELETE FROM UserPushTokens WHERE pushToken = ?").bind(pushToken).run();
 
-    return new Response(JSON.stringify({ message: "Token zaktualizowany" }), { status: 200 });
+    // Wstawiamy nowy token lub aktualizujemy czas ostatniego użycia
+    await db.prepare("INSERT INTO UserPushTokens (userID, pushToken, platform, lastUpdated) VALUES (?, ?, ?, ?)")
+      .bind(userID, pushToken, platform, Date.now()).run();
+
+    return new Response(JSON.stringify({ message: "Token zsynchronizowany" }), { status: 200 });
 
   } catch (error) {
-    return new Response(JSON.stringify({ message: "Błąd: " + error.message }), { status: 500 });
+    return new Response(JSON.stringify({ message: "Błąd serwera: " + error.message }), { status: 500 });
   }
 }
