@@ -14,17 +14,29 @@ import 'package:obstawiator/pages/start_page/login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:obstawiator/firebase_options.dart';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
+  // Inicjalizacja nasłuchiwania w tle (Android APK)
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   final prefs = await SharedPreferences.getInstance();
   final isDarkMode = prefs.getBool('isDarkMode') ?? false;
   themeNotifier.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
 
   runApp(const MyApp());
+}
+
+// Handler dla wiadomości w tle (wymagany statyczny/top-level)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
 }
 
 int? userID;
@@ -181,10 +193,31 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
                   '• Możliwe zdobycie łącznie 6 pkt za mecz.'),
               SizedBox(height: 12),
               Text(
-                'Dodatkowe:',
+                'Typy Długoterminowe:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text('• Typy na Mistrza i Króla Strzelców należy oddać przed rozpoczęciem turnieju.'),
+              Text(
+                  '• Trafienie Mistrza: 15 pkt\n'
+                  '• Trafienie Króla Strzelców: 10 pkt\n'
+                  '• Król strzelców: brak możliwości zmiany po rozpoczęciu turnieju.\n'
+                  '• Mistrz: zmiana możliwa do startu fazy pucharowej. Pierwsza zmiana kosztuje 5 pkt (odejmowane jednorazowo), kolejne zmiany są bezpłatne.'),
+              SizedBox(height: 12),
+              Text(
+                'Zakłady Specjalne:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text('• Zasady punktowania i rozliczania zakładów specjalnych będą opisane bezpośrednio w zakładce danego zakładu specjalnego.'),
+              SizedBox(height: 12),
+              Text(
+                'Zasady Rozstrzygania Remisów (Ex Aequo):',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                  'W przypadku uzyskania przez kilku uczestników tej samej liczby punktów, nagrody przewidziane dla zajmowanych przez nich miejsc są sumowane i dzielone po równo pomiędzy tych uczestników.\n\n'
+                  'Przykład: Jeśli 3 osoby zajmą ex aequo 1. miejsce:\n'
+                  '• Łączy się nagrody za 1., 2. i 3. miejsce (np. 50% + 30% + 20% = 100% puli).\n'
+                  '• Cała kwota jest dzielona po równo na te 3 osoby.\n'
+                  '• W takim przypadku nie przyznaje się już oddzielnie 2. i 3. miejsca.'),
             ],
           ),
         ),
@@ -243,11 +276,58 @@ class ObstawiatorBottomNavigationBar extends StatelessWidget {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _setupInteractedMessage();
+    _listenToForegroundMessages();
+  }
+
+  // Obsługa powiadomień, gdy aplikacja jest otwarta (Foreground)
+  void _listenToForegroundMessages() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (kDebugMode) print('Got a message whilst in the foreground!');
+      if (message.notification != null) {
+        // Pokaż powiadomienie wewnątrz aplikacji jako SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${message.notification!.title}: ${message.notification!.body}'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF002868), // Deep Navy
+          ),
+        );
+      }
+    });
+  }
+
+  // Obsługa powiadomienia, które otwiera aplikację (np. kliknięcie w banner)
+  Future<void> _setupInteractedMessage() async {
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    if (kDebugMode) print('Message clicked!');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Automatycznie odświeżaj token przy każdym wejściu do aplikacji
+    if (userID != null) {
+      syncPushToken();
+    }
+
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
       builder: (context, currentMode, child) {
@@ -271,15 +351,29 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF002868),
-              primary: const Color(0xFF002868),
               secondary: const Color(0xFFBF0A30),
               tertiary: const Color(0xFF006847),
               brightness: Brightness.dark,
+            ).copyWith(
+              primary: const Color(0xFF5C9DFF), // Bright blue
+              onPrimary: Colors.black,
+              secondary: const Color(0xFFEF5350), // Brighter red
+              onSecondary: Colors.black,
             ),
             useMaterial3: true,
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF002868), // Keep consistent navy for dark mode too or slightly darker
+              backgroundColor: Color(0xFF001A44), // Very dark navy
               foregroundColor: Colors.white,
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5C9DFF),
+                foregroundColor: Colors.black,
+              ),
+            ),
+            floatingActionButtonTheme: const FloatingActionButtonThemeData(
+              backgroundColor: Color(0xFF5C9DFF),
+              foregroundColor: Colors.black,
             ),
           ),
           home: const LoginPage(),

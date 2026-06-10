@@ -5,6 +5,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:obstawiator/pages/matches/match_bets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:obstawiator/pages/start_page/login_page.dart';
 
 /// Reprezentuje mecz pomiędzy dwiema drużynami.
 class Match {
@@ -217,6 +219,23 @@ class _MatchListState extends State<MatchList> {
         _matches = loadedMatches;
         _checkBetsForMatches(_matches); // Check bets after loading matches
       });
+    } else if (response.statusCode == 401) {
+      if (mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('userID');
+        await prefs.remove('sessionToken');
+        main.userID = null;
+        main.sessionToken = null;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sesja wygasła. Zaloguj się ponownie.')),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
+      }
     } else {
       // Obsługa błędu, np. wyświetlenie snackbara lub komunikatu o błędzie
       if (mounted) {

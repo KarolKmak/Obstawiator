@@ -4,8 +4,19 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:obstawiator/main.dart' as main;
 
+Future<void> syncPushToken() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  NotificationSettings settings = await messaging.getNotificationSettings();
+  
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    String? token = await messaging.getToken();
+    if (token != null) {
+      await _saveTokenToServer(token);
+    }
+  }
+}
+
 Future<void> requestWebNotificationPermission() async {
-  // To samo dla Androida
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   NotificationSettings settings = await messaging.requestPermission(
@@ -15,11 +26,7 @@ Future<void> requestWebNotificationPermission() async {
   );
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    String? token = await messaging.getToken();
-    if (token != null) {
-      if (kDebugMode) print('FCM Token (Native): $token');
-      await _saveTokenToServer(token);
-    }
+    await syncPushToken();
   }
 }
 

@@ -381,8 +381,8 @@ class _MatchBetsState extends State<MatchBets> {
             Container(
               width: double.infinity, // Make Container take full width
               padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0, bottom: 12.0), // Apply padding here
-              decoration: const BoxDecoration(
-                color: Color(0xFF002868), // Deep Navy Blue
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary, // Adaptive background
               ),
               child: DefaultTextStyle(
                 style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
@@ -495,25 +495,25 @@ class _MatchBetsState extends State<MatchBets> {
                       border: TableBorder.all(color: Colors.grey.shade300, width: 1), // Add border to table
                       children: [
                         TableRow(
-                          decoration: BoxDecoration(color: Colors.blueGrey[50]), // Header row background
+                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondaryContainer), // Adaptive header background
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: Text('Użytkownik', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text('Użytkownik', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer)),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: Text('Zakład', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                              child: Text('Zakład', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.center),
                             ),
                             if (!widget.isGroupStage)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text('Zwycięzca', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                                child: Text('Zwycięzca', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.center),
                               ),
                             if (widget.homeScore != null) // Conditionally add Points cell
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text('Punkty', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                                child: Text('Punkty', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.center),
                               ),
                           ],
                         ),

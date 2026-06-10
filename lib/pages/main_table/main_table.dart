@@ -78,12 +78,19 @@ class _MyHomePageState extends State<MyHomePage>
         }
       } else if (response.statusCode == 401) {
         if (mounted) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('userID');
+          await prefs.remove('sessionToken');
+          main.userID = null;
+          main.sessionToken = null;
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Sesja wygasła. Zaloguj się ponownie.')),
           );
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
           );
         }
       } else {

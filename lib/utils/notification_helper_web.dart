@@ -4,6 +4,22 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:obstawiator/main.dart' as main;
 
+Future<void> syncPushToken() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  
+  // Sprawdź aktualny status uprawnień
+  NotificationSettings settings = await messaging.getNotificationSettings();
+  
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    String? token = await messaging.getToken(
+      vapidKey: "BF2SnAcL-3kXg6KTjm7lclrpmj8T11L8ShuK1WVLb0mXvPHlxR_x985pjYIUIJKVfi-krY0YwYsaAUAm6FSrZ9U"
+    );
+    if (token != null) {
+      await _saveTokenToServer(token);
+    }
+  }
+}
+
 Future<void> requestWebNotificationPermission() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
@@ -15,18 +31,7 @@ Future<void> requestWebNotificationPermission() async {
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
     if (kDebugMode) print('User granted permission');
-    
-    // Get the token
-    String? token = await messaging.getToken(
-      vapidKey: "BF2SnAcL-3kXg6KTjm7lclrpmj8T11L8ShuK1WVLb0mXvPHlxR_x985pjYIUIJKVfi-krY0YwYsaAUAm6FSrZ9U"
-    );
-    
-    if (token != null) {
-      if (kDebugMode) print('FCM Token (Web): $token');
-      await _saveTokenToServer(token);
-    }
-  } else {
-    if (kDebugMode) print('User declined or has not accepted permission');
+    await syncPushToken();
   }
 }
 
