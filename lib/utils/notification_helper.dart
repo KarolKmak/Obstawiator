@@ -4,3 +4,7 @@ import 'notification_helper_stub.dart'
 Future<void> requestWebNotificationPermission() async {
   await helper.requestWebNotificationPermission();
 }
+
+Future<void> syncPushToken() async {
+  await helper.syncPushToken();
+}
