@@ -191,3 +191,44 @@ Rejestr wysłanych przypomnień push (deduplikacja — worker crona nie wysyła 
 2. **Brak PK w `BetMatch` i `BetSpecial`** — możliwe duplikaty; warto dodać `PRIMARY KEY` lub unikalne indeksy, np. `UNIQUE(matchID, userID)` w `BetMatch`.
 3. **Brak indeksów pod zapytania crona** — przy większej liczbie rekordów przyda się `CREATE INDEX idx_betmatch_user_match ON BetMatch(matchID, userID);` oraz `CREATE INDEX idx_matches_start ON Matches(matchStart);`.
 4. **`sent_notifications`** — tabela przyrostowa; zalecane okresowe czyszczenie wpisów starszych niż ~30 dni.
+
+---
+
+## TODO: przebudowa zakładów specjalnych
+
+Planowane rozszerzenie systemu zakładów specjalnych o różne formy zakładu i punktację z ryzykiem. Rozstrzyganie pozostaje **ręczne** (admin ustawia `betResult`, co uruchamia rozliczenie przez dedykowany endpoint — nie przez crona).
+
+### Typy zakładów (`betType` jako TEXT)
+
+| Typ | Opis | Odpowiedź użytkownika |
+|---|---|---|
+| `EVENT` | Czy wydarzenie wystąpi; można obstawić tylko "tak" albo nie brać udziału (brak wiersza w `BetSpecial` = brak zakładu). Sens ma w połączeniu z `pointsLoss > 0`. | implicit "tak" |
+| `YES_NO` | Klasyczne tak/nie. | `"yes"` / `"no"` |
+| `NUMBER` | Wartość liczbowa, punktowane dokładne trafienie. | liczba jako tekst |
+| `NUMBER_CLOSEST` | Wartość liczbowa, wygrywa najbliższy wynik (rozliczenie wymaga porównania wszystkich odpowiedzi; remis = punkty dla wszystkich najbliższych). | liczba jako tekst |
+| `CHOICE` | Wybór jednej opcji z listy zdefiniowanej w zakładzie (lista w kolumnie `options` jako JSON). | wybrana opcja |
+
+### Punktacja
+
+- `pointsWin` (INTEGER) — punkty za trafienie,
+- `pointsLoss` (INTEGER, dodatni) — punkty odejmowane za nietrafienie (`0` = zakład bez ryzyka),
+- brak zakładu = 0 pkt.
+
+### Zmiany w schemacie
+
+```sql
+-- SpecialBets: docelowy kształt
+ID, matchID, betType TEXT, betName, options TEXT (JSON, dla CHOICE),
+betResult, betTimeLimit, betFinished, pointsWin INTEGER, pointsLoss INTEGER
+
+-- BetSpecial: docelowy kształt
+userID, specialBetID, bet, pointsAwarded INTEGER (NULL = nierozliczone),
+updatedAt INTEGER, PRIMARY KEY(userID, specialBetID)
+```
+
+### Zasady implementacji
+
+1. **Rozliczanie idempotentne** — endpoint rozliczający pomija wiersze z wypełnionym `pointsAwarded`; wartość przyznanych punktów zapisywana per odpowiedź (audyt + możliwość korekty: zmiana `betResult` → wyzerowanie `pointsAwarded` → ponowne przeliczenie z korektą w `UserScores`).
+2. **Walidacja odpowiedzi w API** — format `bet` sprawdzany względem `betType` przy zapisie (NUMBER → parsowalna liczba, CHOICE → wartość z listy `options`).
+3. **Termin egzekwowany serwerowo** — zapis/edycja odpowiedzi odrzucane po `betTimeLimit`, niezależnie od UI.
+4. **Edycja przed terminem dozwolona** — zapis przez `INSERT ... ON CONFLICT(userID, specialBetID) DO UPDATE`, aktualizacja `updatedAt`.
