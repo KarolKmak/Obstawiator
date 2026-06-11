@@ -49,6 +49,7 @@ async function handleScheduled(env) {
   // 2. Pobierz Access Token dla FCM v1 (OAuth2)
   // Wymaga wgrania klucza Service Account do env (np. jako sekrety)
   const accessToken = await getFcmAccessToken(env);
+  console.log("Token OK, wysyłam do", results.length, "odbiorców");
 
   // 3. Wyślij powiadomienia równolegle
   const notificationPromises = results.map(async (row) => {
@@ -90,11 +91,16 @@ async function handleScheduled(env) {
         body: JSON.stringify(payload),
       });
 
+      const respText = await response.text();
+      console.log(`FCM status ${response.status} dla user ${row.userID}, match ${row.matchID}: ${respText}`);
+
+
       if (response.ok) {
         // Zaznacz, że powiadomienie zostało wysłane, aby nie wysyłać go ponownie w kolejnym cyklu
         await db.prepare("INSERT INTO sent_notifications (userID, matchID, sentAt) VALUES (?, ?, ?)")
           .bind(row.userID, row.matchID, Date.now())
           .run();
+        console.log(`Zapisano sent_notifications dla user ${row.userID}`);
       } else {
         const errData = await response.json();
         console.error(`FCM Error for user ${row.userID}:`, errData);
