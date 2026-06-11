@@ -9,6 +9,10 @@ export default {
   },
 };
 
+function b64url(input) {
+  return btoa(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
 async function handleScheduled(env) {
   const db = env.obstawiatorDB;
   const now = Date.now();
@@ -127,8 +131,8 @@ async function getFcmAccessToken(env) {
 
   const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '');
   const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '');
-  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
-
+  const unsignedToken = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
+  
   // Podpisywanie kluczem prywatnym przy użyciu Web Crypto API
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
@@ -153,10 +157,7 @@ async function getFcmAccessToken(env) {
     new TextEncoder().encode(unsignedToken)
   );
 
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+  const encodedSignature = b64url(String.fromCharCode(...new Uint8Array(signature)));
 
   const jwt = `${unsignedToken}.${encodedSignature}`;
 
@@ -164,9 +165,12 @@ async function getFcmAccessToken(env) {
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${encodeURIComponent(jwt)}`,
   });
 
   const data = await response.json();
+  if (!data.access_token) {
+    throw new Error(`OAuth error: ${JSON.stringify(data)}`);
+  }
   return data.access_token;
 }
