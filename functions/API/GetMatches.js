@@ -17,11 +17,15 @@ export async function onRequestPost(context) {
       .bind(userID, sessionToken, Date.now()).first();
 
     if (user) {
-      if (reqBody.finishedMatchesOffset !== undefined && reqBody.finishedMatchesOffset !== null) {
-        const { results } = await db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage, winner FROM Matches WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT 10 OFFSET ?").bind(reqBody.finishedMatchesOffset).all();
+      const limit = parseInt(reqBody.limit) || 10;
+      const offset = reqBody.offset !== undefined ? parseInt(reqBody.offset) : (reqBody.finishedMatchesOffset !== undefined ? parseInt(reqBody.finishedMatchesOffset) : 0);
+      const finished = reqBody.finished === true || reqBody.finished === 1 || reqBody.finished === "true" || reqBody.finishedMatchesOffset !== undefined;
+
+      if (finished) {
+        const { results } = await db.prepare("SELECT Matches.ID, host, guest, matchStart, Matches.homeScore, Matches.awayScore, betVisible, isGroupStage, Matches.winner, (BetMatch.homeScore IS NOT NULL) as hasBet FROM Matches LEFT JOIN BetMatch ON Matches.ID = BetMatch.matchID AND BetMatch.userID = ? WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT ? OFFSET ?").bind(userID, limit, offset).all();
         return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       } else {
-        const { results } = await db.prepare("SELECT ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage FROM Matches WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT 10").all();
+        const { results } = await db.prepare("SELECT Matches.ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage, (BetMatch.homeScore IS NOT NULL) as hasBet FROM Matches LEFT JOIN BetMatch ON Matches.ID = BetMatch.matchID AND BetMatch.userID = ? WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT ? OFFSET ?").bind(userID, limit, offset).all();
         return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     } else {

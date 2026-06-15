@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -5,6 +6,7 @@ import 'dart:convert';
 import 'package:obstawiator/main.dart' as main;
 
 Future<void> syncPushToken() async {
+  if (Firebase.apps.isEmpty) return;
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   
   // Sprawdź aktualny status uprawnień
@@ -21,6 +23,7 @@ Future<void> syncPushToken() async {
 }
 
 Future<void> requestWebNotificationPermission() async {
+  if (Firebase.apps.isEmpty) return;
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   NotificationSettings settings = await messaging.requestPermission(

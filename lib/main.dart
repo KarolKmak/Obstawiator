@@ -18,12 +18,22 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Inicjalizacja nasłuchiwania w tle (Android APK)
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  bool isFirebaseSupported = kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
+  if (isFirebaseSupported) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      // Inicjalizacja nasłuchiwania w tle (Android APK)
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      if (kDebugMode) print("Firebase initialization failed: $e");
+    }
+  }
 
   final prefs = await SharedPreferences.getInstance();
   final isDarkMode = prefs.getBool('isDarkMode') ?? false;
@@ -35,8 +45,14 @@ void main() async {
 // Handler dla wiadomości w tle (wymagany statyczny/top-level)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print("Handling a background message: ${message.messageId}");
+  bool isFirebaseSupported = kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
+  if (isFirebaseSupported) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    print("Handling a background message: ${message.messageId}");
+  }
 }
 
 int? userID;
@@ -287,8 +303,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _setupInteractedMessage();
-    _listenToForegroundMessages();
+    if (Firebase.apps.isNotEmpty) {
+      _setupInteractedMessage();
+      _listenToForegroundMessages();
+    }
   }
 
   // Obsługa powiadomień, gdy aplikacja jest otwarta (Foreground)

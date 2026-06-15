@@ -9,7 +9,7 @@ export async function onRequestPost(context)
   {
     return Response.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 302);
   }
-  const updateMatch = context.env.obstawiatorDB.prepare("UPDATE Matches SET homeScore = ?, awayScore = ? WHERE ID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.matchID);
+  const updateMatch = context.env.obstawiatorDB.prepare("UPDATE Matches SET homeScore = ?, awayScore = ?, matchFinished = 1 WHERE ID = ?").bind(reqBody.homeScore, reqBody.awayScore, reqBody.matchID);
   const updateMatchResult = await updateMatch.run();
 
   const getUsers = context.env.obstawiatorDB.prepare("SELECT MAX(ID) as ID FROM Users");

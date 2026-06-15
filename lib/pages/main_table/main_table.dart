@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:obstawiator/pages/start_page/login_page.dart';
+import 'package:obstawiator/pages/main_table/user_bets_view.dart';
 
 class MyHomePage extends StatefulWidget
 {
@@ -150,151 +151,188 @@ class _MyHomePageState extends State<MyHomePage>
     if (kDebugMode) {
       print('Row with ID $id was tapped. UserID is ${main.userID}');
     }
-    if (id == main.userID) {
-      final championSuggestions = userStandingsTable
-          .map((u) => u.championbet)
-          .where((s) => s != 'N/A' && s.isNotEmpty && s != 'empty')
-          .toSet()
-          .toList();
-      final topScorerSuggestions = userStandingsTable
-          .map((u) => u.topscorer)
-          .where((s) => s != 'N/A' && s.isNotEmpty && s != 'empty')
-          .toSet()
-          .toList();
 
+    if (id == main.userID) {
       showDialog(
-        barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
-          // Find the current user's data
-          final currentUserData = userStandingsTable.firstWhere((user) => user.ID == main.userID);
-          String currentChampion = currentUserData.championbet;
-          String currentTopScorer = currentUserData.topscorer;
-
-          return AlertDialog(
-            title: const Text('Zmień typy'),
-            content: StatefulBuilder(
-              builder: (context, setStateDialog) {
-                return SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Autocomplete<String>(
-                        initialValue: TextEditingValue(text: currentChampion == 'empty' ? '' : currentChampion),
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return championSuggestions;
-                          }
-                          return championSuggestions.where((String option) {
-                            return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                          });
-                        },
-                        onSelected: (String selection) {
-                          currentChampion = selection;
-                        },
-                        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                          // Use a more robust way to sync text
-                          return TextField(
-                            controller: controller,
-                            focusNode: focusNode,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: const InputDecoration(labelText: 'Mistrz'),
-                            onChanged: (value) => currentChampion = value,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      Autocomplete<String>(
-                        initialValue: TextEditingValue(text: currentTopScorer == 'empty' ? '' : currentTopScorer),
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return topScorerSuggestions;
-                          }
-                          return topScorerSuggestions.where((String option) {
-                            return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                          });
-                        },
-                        onSelected: (String selection) {
-                          currentTopScorer = selection;
-                        },
-                        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                          return TextField(
-                            controller: controller,
-                            focusNode: focusNode,
-                            style: const TextStyle(fontSize: 16),
-                            decoration: const InputDecoration(labelText: 'Król strzelców'),
-                            onChanged: (value) => currentTopScorer = value,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Anuluj'),
+          return SimpleDialog(
+            title: const Text('Twoje konto'),
+            children: <Widget>[
+              SimpleDialogOption(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => UserBetsView(targetUserID: id)),
+                  );
                 },
+                child: const ListTile(
+                  leading: Icon(Icons.list_alt),
+                  title: Text('Przeglądaj swoje zakłady'),
+                ),
               ),
-              TextButton(
-                child: const Text('Zapisz'),
-                onPressed: () async {
-                  if (currentChampion.isEmpty || currentTopScorer.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Oba pola muszą być wypełnione!')),
-                    );
-                    return;
-                  }
-
-                  var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
-                  try {
-                    final response = await http.post(
-                      url,
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': main.sessionToken ?? '',
-                      },
-                      body: json.encode({
-                        "ID": main.userID,
-                        "sessionToken": main.sessionToken,
-                        "championBet": currentChampion,
-                        "topScorerBet": currentTopScorer
-                      }),
-                    );
-
-                    if (response.statusCode == 201) {
-                      final decodedBody = jsonDecode(response.body);
-                      final message = decodedBody['message'] ?? 'Zapisano pomyślnie!';
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(message)),
-                      );
-
-                      fetchData(); // Refresh the table data
-                      Navigator.of(context).pop();
-                    } else {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Błąd zapisu: ${response.statusCode}')),
-                      );
-                    }
-                  } catch (e) {
-                    if (kDebugMode) print("Update bets error: $e");
-                  }
+              SimpleDialogOption(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showEditLongTermBetsDialog();
                 },
+                child: const ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('Zmień typy długoterminowe'),
+                ),
               ),
             ],
           );
         },
       );
     } else {
-      if (kDebugMode) {
-        print("Row ID: $id does not match UserID: ${main.userID}");
-      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => UserBetsView(targetUserID: id)),
+      );
     }
+  }
+
+  void _showEditLongTermBetsDialog() {
+    final championSuggestions = userStandingsTable
+        .map((u) => u.championbet)
+        .where((s) => s != 'N/A' && s.isNotEmpty && s != 'empty')
+        .toSet()
+        .toList();
+    final topScorerSuggestions = userStandingsTable
+        .map((u) => u.topscorer)
+        .where((s) => s != 'N/A' && s.isNotEmpty && s != 'empty')
+        .toSet()
+        .toList();
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        // Find the current user's data
+        final currentUserData = userStandingsTable.firstWhere((user) => user.ID == main.userID);
+        String currentChampion = currentUserData.championbet;
+        String currentTopScorer = currentUserData.topscorer;
+
+        return AlertDialog(
+          title: const Text('Zmień typy'),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Autocomplete<String>(
+                      initialValue: TextEditingValue(text: currentChampion == 'empty' ? '' : currentChampion),
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return championSuggestions;
+                        }
+                        return championSuggestions.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      onSelected: (String selection) {
+                        currentChampion = selection;
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: const InputDecoration(labelText: 'Mistrz'),
+                          onChanged: (value) => currentChampion = value,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Autocomplete<String>(
+                      initialValue: TextEditingValue(text: currentTopScorer == 'empty' ? '' : currentTopScorer),
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return topScorerSuggestions;
+                        }
+                        return topScorerSuggestions.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      onSelected: (String selection) {
+                        currentTopScorer = selection;
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: const InputDecoration(labelText: 'Król strzelców'),
+                          onChanged: (value) => currentTopScorer = value,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Anuluj'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Zapisz'),
+              onPressed: () async {
+                if (currentChampion.isEmpty || currentTopScorer.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Oba pola muszą być wypełnione!')),
+                  );
+                  return;
+                }
+
+                var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
+                try {
+                  final response = await http.post(
+                    url,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': main.sessionToken ?? '',
+                    },
+                    body: json.encode({
+                      "ID": main.userID,
+                      "sessionToken": main.sessionToken,
+                      "championBet": currentChampion,
+                      "topScorerBet": currentTopScorer
+                    }),
+                  );
+
+                  if (response.statusCode == 201) {
+                    final decodedBody = jsonDecode(response.body);
+                    final message = decodedBody['message'] ?? 'Zapisano pomyślnie!';
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+
+                    fetchData(); // Refresh the table data
+                    Navigator.of(context).pop();
+                  } else {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Błąd zapisu: ${response.statusCode}')),
+                    );
+                  }
+                } catch (e) {
+                  if (kDebugMode) print("Update bets error: $e");
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   List<DataColumn> _createColumns()
