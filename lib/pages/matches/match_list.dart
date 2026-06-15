@@ -5,6 +5,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:obstawiator/pages/matches/match_bets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:obstawiator/pages/start_page/login_page.dart';
+import 'package:flutter/foundation.dart';
 
 /// Reprezentuje mecz pomiędzy dwiema drużynami.
 class Match {
@@ -42,9 +45,9 @@ class Match {
       awayScore: json['awayScore'], // Ensure this matches the JSON key
       matchStart: DateTime.fromMillisecondsSinceEpoch(json['matchStart'], isUtc: true).toLocal(),
       betVisible: json['betVisible'],
-      isGroupStage: json['isGroupStage'] == 'true',
+      isGroupStage: json['isGroupStage'] == 'true' || json['isGroupStage'] == 1 || json['isGroupStage'] == true,
       winner: json['winner'],
-      // hasBet will be updated later,
+      hasBet: json['hasBet'] == 1 || json['hasBet'] == true,
     );
   }
 
@@ -63,6 +66,92 @@ class Match {
     }
     return null; // No mark if not today
   }
+
+  static String getFlag(String countryName) {
+    switch (countryName.toLowerCase().trim()) {
+      case 'polska': return '🇵🇱';
+      case 'niemcy': return '🇩🇪';
+      case 'usa':
+      case 'stany zjednoczone': return '🇺🇸';
+      case 'kanada': return '🇨🇦';
+      case 'meksyk': return '🇲🇽';
+      case 'argentyna': return '🇦🇷';
+      case 'brazylia': return '🇧🇷';
+      case 'francja': return '🇫🇷';
+      case 'hiszpania': return '🇪🇸';
+      case 'anglia': return '🏴󠁧󠁢󠁥󠁮󠁧󠁿';
+      case 'portugalia': return '🇵🇹';
+      case 'włochy': return '🇮🇹';
+      case 'holandia': return '🇳🇱';
+      case 'belgia': return '🇧🇪';
+      case 'chorwacja': return '🇭🇷';
+      case 'urugwaj': return '🇺🇾';
+      case 'maroko': return '🇲🇦';
+      case 'szwajcaria': return '🇨🇭';
+      case 'dania': return '🇩🇰';
+      case 'japonia': return '🇯🇵';
+      case 'korea południowa': return '🇰🇷';
+      case 'senegal': return '🇸🇳';
+      case 'serbia': return '🇷🇸';
+      case 'austria': return '🇦🇹';
+      case 'szkocja': return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+      case 'turcja': return '🇹🇷';
+      case 'rumunia': return '🇷🇴';
+      case 'węgry': return '🇭🇺';
+      case 'słowacja': return '🇸🇰';
+      case 'słowenia': return '🇸🇮';
+      case 'czechy': return '🇨🇿';
+      case 'gruzja': return '🇬🇪';
+      case 'albania': return '🇦🇱';
+      case 'ukraina': return '🇺🇦';
+      case 'szwecja': return '🇸🇪';
+      case 'norwegia': return '🇳🇴';
+      case 'finlandia': return '🇫🇮';
+      case 'islandia': return '🇮🇸';
+      case 'walia': return '🏴󠁧󠁢󠁷󠁬󠁳󠁿';
+      case 'republika południowej afryki': return '🇿🇦';
+      case 'bośnia i hercegowina': return '🇧🇦';
+      case 'katar': return '🇶🇦';
+      case 'haiti': return '🇭🇹';
+      case 'paragwaj': return '🇵🇾';
+      case 'australia': return '🇦🇺';
+      case 'ekwador': return '🇪🇨';
+      case 'wybrzeże kości słoniowej': return '🇨🇮';
+      case 'curacao': return '🇨🇼';
+      case 'tunezja': return '🇹🇳';
+      case 'egipt': return '🇪🇬';
+      case 'iran': return '🇮🇷';
+      case 'nowa zelandia': return '🇳🇿';
+      case 'republika zielonego przylądka': return '🇨🇻';
+      case 'arabia saudyjska': return '🇸🇦';
+      case 'algieria': return '🇩🇿';
+      case 'jordania': return '🇯🇴';
+      case 'kolumbia': return '🇨🇴';
+      case 'demokratyczna republika kongo': return '🇨🇩';
+      case 'uzbekistan': return '🇺🇿';
+      case 'ghana': return '🇬🇭';
+      case 'panama': return '🇵🇦';
+      case 'irak': return '🇮🇶';
+      default: return '⚽';
+    }
+  }
+
+  static String getShortName(String countryName) {
+    switch (countryName.toLowerCase().trim()) {
+      case 'stany zjednoczone': return 'USA';
+      case 'republika południowej afryki': return 'RPA';
+      case 'wybrzeże kości słoniowej': return 'WKS';
+      case 'demokratyczna republika kongo':
+      case 'demokratyczna republika kongu': return 'DR Kongo';
+      case 'korea południowa': return 'Korea Płd.';
+      case 'bośnia i hercegowina': return 'Bośnia';
+      case 'republika zielonego przylądka': return 'Z. Przylądek';
+      case 'arabia saudyjska': return 'Arabia Saud.';
+      case 'nowa zelandia': return 'N. Zelandia';
+      case 'północna macedonia': return 'Macedonia Płn.';
+      default: return countryName;
+    }
+  }
 }
 
 /// Widżet wyświetlający listę meczów.
@@ -75,237 +164,348 @@ class MatchList extends StatefulWidget {
 }
 
 class _MatchListState extends State<MatchList> {
-  List<Match> _matches = [];
+  List<Match> _upcomingMatches = [];
   List<Match> _finishedMatches = [];
-  int _finishedMatchesOffset = 0;
-  bool _showLoadMoreButton = true;
+  
+  int _upcomingOffset = 0;
+  int _finishedOffset = 0;
+  
+  bool _hasMoreUpcoming = true;
+  bool _hasMoreFinished = true;
+  
+  bool _isLoadingUpcoming = false;
+  bool _isLoadingFinished = false;
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('pl_PL', null).then((_) => _loadMatches());
-    _loadMatches();
+    initializeDateFormatting('pl_PL', null).then((_) {
+      _loadUpcomingMatches();
+      _loadFinishedMatches();
+    });
   }
 
-  Future<void> _checkBetsForMatches(List<Match> matches) async {
-    for (var match in matches) {
-      // Only check if the bet was placed if the match start time is the same as the current date.
-      final now = DateTime.now();
-      // And if match has not already started
-      if (match.matchStart.isAfter(now) && match.matchStart.year == now.year && match.matchStart.month == now.month && match.matchStart.day == now.day ) {
-        final response = await http.post(
-          Uri.parse('https://obstawiator.pages.dev/API/IsMyBetPlaced'), // Corrected API endpoint
-          headers: <String, String>{
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-          body: jsonEncode(<String, int?>{
-            'matchID': match.ID,
-            'ID': main.userID,
-          }),
-        );
+  Future<void> _loadUpcomingMatches() async {
+    if (_isLoadingUpcoming || !_hasMoreUpcoming) return;
+    setState(() => _isLoadingUpcoming = true);
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          // Check if data is a list and not empty
-          if (data is List && data.isNotEmpty) {
-            // Assuming the relevant bet information is in the first element of the list
-            // and the key for the bet is 'userBet' or if a winner is already declared.
-            match.hasBet = (data[0]['userBetHome'] != null && data[0]['userBetAway'] != null);
-          } else if (data is Map<String, dynamic>) {
-            // Check if data is a map
-            match.hasBet = data['userBet'] != null;
-          }
-        } else {
-          final responseData = jsonDecode(response.body);
-          final message = responseData['message'] ?? 'Nie udało się sprawdzić zakładu dla meczu ${match.ID}';
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-          }
-        }
-      }
-    }
-    setState(() {}); // Update the UI after checking bets
-  }
+    try {
+      final response = await http.post(
+        Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': main.sessionToken ?? '',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'ID': main.userID,
+          'sessionToken': main.sessionToken,
+          'finished': false,
+          'limit': 10,
+          'offset': _upcomingOffset,
+        }),
+      );
 
-  Future<void> _loadMatches() async {
-    final response = await http.post(
-      Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, int?>{
-        'ID': main.userID,
-      }),
-    );
-    if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        final loadedMatches = data.map((item) => Match.fromJson(item)).toList();
-        _matches = loadedMatches;
-        _checkBetsForMatches(_matches); // Check bets after loading matches
-      });
-    } else {
-      // Obsługa błędu, np. wyświetlenie snackbara lub komunikatu o błędzie
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nie udało się załadować meczów')),
-        );
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        final newMatches = data.map((item) => Match.fromJson(item)).toList();
+        
+        setState(() {
+          _upcomingMatches.addAll(newMatches);
+          _upcomingOffset += newMatches.length;
+          if (newMatches.length < 10) {
+            _hasMoreUpcoming = false;
+          }
+          _isLoadingUpcoming = false;
+        });
+      } else if (response.statusCode == 401) {
+        _handleSessionExpired();
+      } else {
+        _showError('Nie udało się załadować nadchodzących meczów');
+        setState(() => _isLoadingUpcoming = false);
       }
-      // For now, using placeholder data if API fails
+    } catch (e) {
+      _showError('Błąd połączenia');
+      setState(() => _isLoadingUpcoming = false);
     }
   }
 
   Future<void> _loadFinishedMatches() async {
-    // ignore: avoid_print
-    print('Loading finished matches with offset: $_finishedMatchesOffset');
-    final response = await http.post(
-      Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, int?>{
-        // ignore: unnecessary_string_interpolations
-        // ignore: avoid_print
-        'ID': main.userID,
-        'finishedMatchesOffset': _finishedMatchesOffset,
-      }),
-    );
+    if (_isLoadingFinished || !_hasMoreFinished) return;
+    setState(() => _isLoadingFinished = true);
 
-    if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
-      // ignore: avoid_print
-      print('Received data for finished matches: $data');
-      setState(() {
-        if (data.isEmpty) {
-          _showLoadMoreButton = false;
-        } // No new matches to add
+    try {
+      final response = await http.post(
+        Uri.parse('https://obstawiator.pages.dev/API/GetMatches'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': main.sessionToken ?? '',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'ID': main.userID,
+          'sessionToken': main.sessionToken,
+          'finished': true,
+          'limit': 5,
+          'offset': _finishedOffset,
+          'finishedMatchesOffset': _finishedOffset,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
         final newMatches = data.map((item) => Match.fromJson(item)).toList();
-        _finishedMatches.addAll(newMatches);
-        _finishedMatchesOffset += newMatches.length;
-        // ignore: avoid_print
-        print('Current finished matches count after adding: ${_finishedMatches.length}');
-        if (_finishedMatches.length < 10) {
-          _showLoadMoreButton = false;
-        }
-        // ignore: avoid_print
-        print('New finished matches offset: $_finishedMatchesOffset');
-        _checkBetsForMatches(_finishedMatches); // Check bets after loading finished matches
-      });
-    } else {
-      // ignore: avoid_print
-      print('Failed to load finished matches: ${response.statusCode}');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nie udało się załadować meczów')),
-        );
+        
+        setState(() {
+          _finishedMatches.addAll(newMatches);
+          _finishedOffset += newMatches.length;
+          if (newMatches.length < 5) {
+            _hasMoreFinished = false;
+          }
+          _isLoadingFinished = false;
+        });
+      } else if (response.statusCode == 401) {
+        _handleSessionExpired();
+      } else {
+        _showError('Nie udało się załadować zakończonych meczów');
+        setState(() => _isLoadingFinished = false);
       }
-      // For now, using placeholder data if API fails
+    } catch (e) {
+      _showError('Błąd połączenia');
+      setState(() => _isLoadingFinished = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold( // Opakowanie widżetem Scaffold
-      appBar: const main.ObstawiatorAppBar(),
-      body: Material( // Opakowanie widżetem Material
-        color: Theme.of(context).colorScheme.surface, // Ustawienie koloru tła
-        child: Center( // Wyśrodkowanie ListView
-          child: _matches.isEmpty && _finishedMatches.isEmpty && !_showLoadMoreButton ? const Center(child: Text('Nie ma więcej zakończonych meczów do załadowania')) : ListView.builder(
-            // shrinkWrap: true, // Usunięcie shrinkWrap, aby umożliwić przewijanie w przypadku dużej liczby elementów
-            itemCount: _matches.length + _finishedMatches.length,
-            itemBuilder: (context, index) {
-              final match = index < _matches.length ? _matches[index] : _finishedMatches[index - _matches.length];
-              // Sprawdzenie orientacji ekranu
-              final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
-              // Szerokość kontenera dostosowana do orientacji
-              final containerWidth = isPortrait ? MediaQuery.of(context).size.width * 1 : MediaQuery.of(context).size.width * 0.5; // Zmienione z 0.5 na 0.9 dla portretu
+  void _handleSessionExpired() async {
+    if (mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('userID');
+      await prefs.remove('sessionToken');
+      main.userID = null;
+      main.sessionToken = null;
 
-              final exclamationColor = match.getExclamationMarkColor();
-              return Center( // Wyśrodkowanie każdej karty
-                child: Container(
-                  width: containerWidth, // Użycie zdefiniowanej szerokości
-                  constraints: const BoxConstraints(minWidth: 300), // Minimalna szerokość zawartości
-                  child: Card( // Użycie Card dla lepszej wizualnej reprezentacji kafelka
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    clipBehavior: Clip.antiAlias, // Ta linia zapewnia, że zawartość respektuje zaokrąglone rogi Card
-                    child: InkWell( // Opakowanie ListTile widżetem InkWell, aby uczynić go klikalnym
-                    highlightColor: Theme.of(context).colorScheme.secondaryContainer, // Zmiana koloru tła po kliknięciu
-                    splashColor: Colors.transparent, // Usunięcie efektu plusku
-                    onTap: () {
-                      // ignore: avoid_print
-                      print('Match winner before navigation: ${match.winner}');
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MatchBets(
-                            host: match.host,
-                            guest: match.guest,
-                            matchStart: match.matchStart,
-                            homeScore: match.homeScore,
-                            awayScore: match.awayScore,
-                            matchID: match.ID,
-                            betVisible: match.betVisible,
-                            isGroupStage: match.isGroupStage,
-                            winner: match.winner,
-                          ),
-                        ),
-                      ).then((_) {
-                        // ignore: avoid_print
-                        print('Match winner after navigation: ${match.winner}');
-                      });
-                    },
-                      child: ListTile(
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            if (exclamationColor != null && !match.hasBet && match.matchStart.isAfter(DateTime.now())) // Invisible placeholder to balance layout if no icon on left)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Icon(Icons.warning_amber_rounded, color: exclamationColor, size: 24),
-                              )
-                            else if (exclamationColor != null && match.hasBet) // Keep spacing consistent
-                              const SizedBox(width: 32), // Icon width + padding
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sesja wygasła. Zaloguj się ponownie.')),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
+    }
+  }
 
-                            Expanded(
-                              child: Text(match.host, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 
-                              child: Text(
-                                '${match.homeScore ?? '-'} : ${match.awayScore ?? '-'}',
-                                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(match.guest, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
-                            ),
-                            if (exclamationColor != null && !match.hasBet) // Invisible placeholder to balance layout if no icon on left
-                              const SizedBox(width: 32)
-                            else if (exclamationColor == null) // If no icon at all, add some padding
-                              const SizedBox(width: 16),
+  Widget _buildMatchCard(Match match) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Płynne przejście szerokości: na telefonach 100%, na większych ekranach rośnie wolniej
+    final containerWidth = screenWidth < 600 
+        ? screenWidth 
+        : (600 + (screenWidth - 600) * 0.3).clamp(0.0, 1000.0);
 
+    final bool isNotPlaced = !match.hasBet && match.matchStart.isAfter(DateTime.now());
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-                          ],
-                        ),
-                        subtitle: Text('${DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart)}', textAlign: TextAlign.center),
-                      ),
-                    ),
+    return Center(
+      child: Container(
+        width: containerWidth,
+        constraints: const BoxConstraints(minWidth: 300),
+        child: Card(
+          color: isNotPlaced 
+            ? (isDarkMode ? Colors.orange.withOpacity(0.05) : Colors.orange.withOpacity(0.1)) 
+            : null,
+          shape: isNotPlaced
+              ? RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: isDarkMode ? Colors.orange.withOpacity(0.5) : Colors.orange, 
+                    width: isDarkMode ? 1.0 : 1.5
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MatchBets(
+                    host: match.host,
+                    guest: match.guest,
+                    matchStart: match.matchStart,
+                    homeScore: match.homeScore,
+                    awayScore: match.awayScore,
+                    matchID: match.ID,
+                    betVisible: match.betVisible,
+                    isGroupStage: match.isGroupStage,
+                    winner: match.winner,
                   ),
                 ),
               );
             },
+            child: ListTile(
+              title: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(Match.getFlag(match.host), style: const TextStyle(fontSize: 18)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final fullName = match.host;
+                              final shortName = Match.getShortName(fullName);
+                              const style = TextStyle(fontWeight: FontWeight.bold, fontSize: 16);
+                              
+                              String displayName = fullName;
+                              if (fullName != shortName) {
+                                final textPainter = TextPainter(
+                                  text: TextSpan(text: fullName, style: style),
+                                  maxLines: 1,
+                                  textDirection: Directionality.of(context),
+                                )..layout(maxWidth: constraints.maxWidth);
+                                
+                                if (textPainter.didExceedMaxLines) {
+                                  displayName = shortName;
+                                }
+                              }
+
+                              return Text(
+                                displayName,
+                                textAlign: TextAlign.left,
+                                style: style,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Text(
+                      '${match.homeScore ?? '-'} : ${match.awayScore ?? '-'}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final fullName = match.guest;
+                              final shortName = Match.getShortName(fullName);
+                              const style = TextStyle(fontWeight: FontWeight.bold, fontSize: 16);
+                              
+                              String displayName = fullName;
+                              if (fullName != shortName) {
+                                final textPainter = TextPainter(
+                                  text: TextSpan(text: fullName, style: style),
+                                  maxLines: 1,
+                                  textDirection: Directionality.of(context),
+                                )..layout(maxWidth: constraints.maxWidth);
+                                
+                                if (textPainter.didExceedMaxLines) {
+                                  displayName = shortName;
+                                }
+                              }
+
+                              return Text(
+                                displayName,
+                                textAlign: TextAlign.right,
+                                style: style,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(Match.getFlag(match.guest), style: const TextStyle(fontSize: 18)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              subtitle: Text(
+                DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _showLoadMoreButton
-          ? FloatingActionButton.extended(
-              onPressed: _loadFinishedMatches,
-              label: const Text('Załaduj zakończone mecze'),
-              icon: const Icon(Icons.download),
-            )
-          : const SizedBox.shrink(), // Use SizedBox.shrink() to make the button completely invisible
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const main.ObstawiatorAppBar(),
+      body: Material(
+        color: Theme.of(context).colorScheme.surface,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Upcoming Matches Section
+              if (_upcomingMatches.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Nadchodzące mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                ),
+                ..._upcomingMatches.map((m) => _buildMatchCard(m)),
+                if (_hasMoreUpcoming)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoadingUpcoming ? null : _loadUpcomingMatches,
+                      label: _isLoadingUpcoming ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej nadchodzących'),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ),
+              ],
+
+              const Divider(thickness: 2, height: 40),
+
+              // Finished Matches Section
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Zakończone mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              ),
+              if (_finishedMatches.isEmpty && !_hasMoreFinished)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Brak zakończonych meczów'),
+                ),
+              ..._finishedMatches.map((m) => _buildMatchCard(m)),
+              
+              if (_hasMoreFinished)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoadingFinished ? null : _loadFinishedMatches,
+                    label: _isLoadingFinished ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej zakończonych'),
+                    icon: const Icon(Icons.history),
+                  ),
+                ),
+              const SizedBox(height: 80), // Space for FAB/BottomBar
+            ],
+          ),
+        ),
+      ),
       bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 1),
     );
   }

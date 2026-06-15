@@ -25,8 +25,7 @@ class MatchBets extends StatefulWidget {
     required this.betVisible,
     required this.isGroupStage,
     required this.winner,
-  })  : otherUsersBetsData = [],
-        userBetData = null {
+  }) {
     // Print all passed values
     print('MatchBets constructor called with:');
     print('  matchID: $matchID');
@@ -40,9 +39,6 @@ class MatchBets extends StatefulWidget {
     print('  winner: $winner');
   }
 
-
-  Map<String, dynamic>? userBetData;
-  List<Map<String, dynamic>> otherUsersBetsData = [];
 
   @override
   _MatchBetsState createState() => _MatchBetsState();
@@ -63,8 +59,15 @@ class _MatchBetsState extends State<MatchBets> {
     try {
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
-        body: json.encode({'matchID': widget.matchID, 'ID': main.userID}),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": main.sessionToken ?? "",
+        },
+        body: json.encode({
+          'matchID': widget.matchID,
+          'ID': main.userID,
+          'sessionToken': main.sessionToken
+        }),
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -137,6 +140,7 @@ class _MatchBetsState extends State<MatchBets> {
       final body = json.encode({
         'matchID': widget.matchID,
         'ID': main.userID,
+        'sessionToken': main.sessionToken,
         'homeScore': int.tryParse(homeScore),
         'awayScore': int.tryParse(awayScore),
         'winner': winner
@@ -144,7 +148,10 @@ class _MatchBetsState extends State<MatchBets> {
       print('Submitting bet with body: $body'); // Print the body here
       final response = await http.post(
         url,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": main.sessionToken ?? "",
+        },
         body: body,
       );
       if (response.statusCode == 201) {
@@ -200,18 +207,20 @@ class _MatchBetsState extends State<MatchBets> {
                         ),
                       Row(
                         children: [
-                          Checkbox(
-                            value: dialogSelectedWinner == 0, // 0 for host
-                            onChanged: (bool? value) {
-                              setState(() {
-                                dialogSelectedWinner = value! ? 0 : null;
-                              });
-                            },
-                          ),
+                          if (!widget.isGroupStage)
+                            Checkbox(
+                              value: dialogSelectedWinner == 0, // 0 for host
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  dialogSelectedWinner = value! ? 0 : null;
+                                });
+                              },
+                            ),
                           Expanded(
                             child: TextField(
                               controller: homeScoreController,
                               keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: 16),
                               decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
                             ),
                           ),
@@ -219,18 +228,20 @@ class _MatchBetsState extends State<MatchBets> {
                       ),
                       Row(
                         children: [
-                          Checkbox(
-                            value: dialogSelectedWinner == 1, // 1 for guest
-                            onChanged: (bool? value) {
-                              setState(() {
-                                dialogSelectedWinner = value! ? 1 : null;
-                              });
-                            },
-                          ),
+                          if (!widget.isGroupStage)
+                            Checkbox(
+                              value: dialogSelectedWinner == 1, // 1 for guest
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  dialogSelectedWinner = value! ? 1 : null;
+                                });
+                              },
+                            ),
                           Expanded(
                             child: TextField(
                               controller: awayScoreController,
                               keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: 16),
                               decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
                             ),
                           ),
@@ -275,7 +286,76 @@ class _MatchBetsState extends State<MatchBets> {
       },
     );
     fetchMatchBets(); // Keep this call if you also want to refresh on placeBet
-  }  @override
+  }  String getFlag(String countryName) {
+    switch (countryName.toLowerCase().trim()) {
+      case 'polska': return '🇵🇱';
+      case 'niemcy': return '🇩🇪';
+      case 'usa':
+      case 'stany zjednoczone': return '🇺🇸';
+      case 'kanada': return '🇨🇦';
+      case 'meksyk': return '🇲🇽';
+      case 'argentyna': return '🇦🇷';
+      case 'brazylia': return '🇧🇷';
+      case 'francja': return '🇫🇷';
+      case 'hiszpania': return '🇪🇸';
+      case 'anglia': return '🏴󠁧󠁢󠁥󠁮󠁧󠁿';
+      case 'portugalia': return '🇵🇹';
+      case 'włochy': return '🇮🇹';
+      case 'holandia': return '🇳🇱';
+      case 'belgia': return '🇧🇪';
+      case 'chorwacja': return '🇭🇷';
+      case 'urugwaj': return '🇺🇾';
+      case 'maroko': return '🇲🇦';
+      case 'szwajcaria': return '🇨🇭';
+      case 'dania': return '🇩🇰';
+      case 'japonia': return '🇯🇵';
+      case 'korea południowa': return '🇰🇷';
+      case 'senegal': return '🇸🇳';
+      case 'serbia': return '🇷🇸';
+      case 'austria': return '🇦🇹';
+      case 'szkocja': return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+      case 'turcja': return '🇹🇷';
+      case 'rumunia': return '🇷🇴';
+      case 'węgry': return '🇭🇺';
+      case 'słowacja': return '🇸🇰';
+      case 'słowenia': return '🇸🇮';
+      case 'czechy': return '🇨🇿';
+      case 'gruzja': return '🇬🇪';
+      case 'albania': return '🇦🇱';
+      case 'ukraina': return '🇺🇦';
+      case 'szwecja': return '🇸🇪';
+      case 'norwegia': return '🇳🇴';
+      case 'finlandia': return '🇫🇮';
+      case 'islandia': return '🇮🇸';
+      case 'walia': return '🏴󠁧󠁢󠁷󠁬󠁳󠁿';
+      case 'republika południowej afryki': return '🇿🇦';
+      case 'bośnia i hercegowina': return '🇧🇦';
+      case 'katar': return '🇶🇦';
+      case 'haiti': return '🇭🇹';
+      case 'paragwaj': return '🇵🇾';
+      case 'australia': return '🇦🇺';
+      case 'ekwador': return '🇪🇨';
+      case 'wybrzeże kości słoniowej': return '🇨🇮';
+      case 'curacao': return '🇨🇼';
+      case 'tunezja': return '🇹🇳';
+      case 'egipt': return '🇪🇬';
+      case 'iran': return '🇮🇷';
+      case 'nowa zelandia': return '🇳🇿';
+      case 'republika zielonego przylądka': return '🇨🇻';
+      case 'arabia saudyjska': return '🇸🇦';
+      case 'algieria': return '🇩🇿';
+      case 'jordania': return '🇯🇴';
+      case 'kolumbia': return '🇨🇴';
+      case 'demokratyczna republika kongo': return '🇨🇩';
+      case 'uzbekistan': return '🇺🇿';
+      case 'ghana': return '🇬🇭';
+      case 'panama': return '🇵🇦';
+      case 'irak': return '🇮🇶';
+      default: return '⚽';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final String? userBet = userBetData != null
         ? '${userBetData?['homeScore'] ?? '-'} : ${userBetData?['awayScore'] ?? '-'}'
@@ -302,9 +382,7 @@ class _MatchBetsState extends State<MatchBets> {
               width: double.infinity, // Make Container take full width
               padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0, bottom: 12.0), // Apply padding here
               decoration: BoxDecoration(
-                color: Colors.blue[700], // Darker blue color
-                // No border radius for top and side coverage
-                // borderRadius: BorderRadius.circular(8.0),
+                color: Theme.of(context).colorScheme.primary, // Adaptive background
               ),
               child: DefaultTextStyle(
                 style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
@@ -316,20 +394,14 @@ class _MatchBetsState extends State<MatchBets> {
                         text: TextSpan(
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
                           children: <TextSpan>[
-                            TextSpan(text: '${widget.host} '),
+                            TextSpan(text: '${getFlag(widget.host)} ${widget.host} '),
                             TextSpan(
                               text: '${widget.homeScore ?? '-'} : ${widget.awayScore ?? '-'}',
-                              style: TextStyle(color: Colors.amberAccent[100]), // Different color for scores
+                              style: const TextStyle(color: Color(0xFFFFD700)), // Gold score
                             ),
-                            TextSpan(text: ' ${widget.guest}'),
+                            TextSpan(text: ' ${widget.guest} ${getFlag(widget.guest)}'),
                           ],
                         ),
-                        // Text(
-                        //   // '$host vs $guest',
-                        //   '$host ${homeScore ?? '-'} : ${awayScore ?? '-'} $guest',
-                        //
-                        //   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
-                        // ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
@@ -423,25 +495,25 @@ class _MatchBetsState extends State<MatchBets> {
                       border: TableBorder.all(color: Colors.grey.shade300, width: 1), // Add border to table
                       children: [
                         TableRow(
-                          decoration: BoxDecoration(color: Colors.blueGrey[50]), // Header row background
+                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondaryContainer), // Adaptive header background
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: Text('Użytkownik', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text('Użytkownik', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer)),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: Text('Zakład', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                              child: Text('Zakład', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.center),
                             ),
                             if (!widget.isGroupStage)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text('Zwycięzca', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                                child: Text('Zwycięzca', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.center),
                               ),
                             if (widget.homeScore != null) // Conditionally add Points cell
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text('Punkty', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                                child: Text('Punkty', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.center),
                               ),
                           ],
                         ),

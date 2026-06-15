@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:obstawiator/pages/main_table/main_table.dart' as main_table;
 import 'package:obstawiator/pages/start_page/registration_page.dart' as registration;
@@ -21,6 +23,28 @@ class _LoginPageState extends State<LoginPage>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUserId = prefs.getInt('userID');
+    final savedToken = prefs.getString('sessionToken');
+
+    if (savedUserId != null && savedToken != null) {
+      main.userID = savedUserId;
+      main.sessionToken = savedToken;
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+        );
+      }
+    }
+  }
+
   void register()
   {
     Navigator.of(context).pushReplacement(
@@ -28,36 +52,43 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  Future<void> login()
-  async {
-    if (_formKey.currentState!.validate())
-    {
-      var headers =
-      {
-        'Content-Type': 'application/json'
-      };
+  Future<void> login() async {
+    if (_formKey.currentState!.validate()) {
       var url = Uri.parse("https://obstawiator.pages.dev/API/Login");
-      var request = http.Request('POST', url);
-      request.body = json.encode({"email": _emailController.text.toLowerCase(), "password": _passwordController.text});
-      request.headers.addAll(headers);
-      http.StreamedResponse response = await request.send();
-      var result = await response.stream.bytesToString();
-      var resultJSON = json.decode(result);
-      if(response.statusCode == 200)
-      {
-        main.userID = resultJSON['userID'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultJSON['message'])),
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            "email": _emailController.text.toLowerCase(),
+            "password": _passwordController.text
+          }),
         );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
-        );
-      }
-      else
-      {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultJSON['message'])),
-        );
+
+        var resultJSON = json.decode(response.body);
+        if (response.statusCode == 200) {
+          main.userID = resultJSON['userID'];
+          main.sessionToken = resultJSON['sessionToken'];
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('userID', main.userID!);
+          await prefs.setString('sessionToken', main.sessionToken!);
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(resultJSON['message'])),
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+          );
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(resultJSON['message'])),
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) print("Login error: $e");
       }
     }
   }
@@ -89,6 +120,7 @@ class _LoginPageState extends State<LoginPage>
                     children: <Widget>[
                       TextFormField(
                         controller: _emailController,
+                        style: const TextStyle(fontSize: 16),
                         decoration: const InputDecoration(labelText: 'E-mail'),
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: [AutofillHints.newUsername, AutofillHints.username],
@@ -104,6 +136,7 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       TextFormField(
                         controller: _passwordController,
+                        style: const TextStyle(fontSize: 16),
                         decoration: const InputDecoration(labelText: 'Hasło'),
                         obscureText: true,
                         autofillHints: [AutofillHints.newPassword, AutofillHints.password],

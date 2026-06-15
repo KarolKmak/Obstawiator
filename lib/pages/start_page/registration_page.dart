@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:obstawiator/utils/notification_helper.dart';
 import 'package:obstawiator/pages/start_page/initial_bets.dart';
 import 'package:obstawiator/pages/start_page/login_page.dart';
 import 'package:obstawiator/main.dart' as main;
@@ -20,32 +23,56 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _tokenController = TextEditingController();
 
-  Future<void> register() async {
-    var headers =
-    {
-      'Content-Type': 'application/json'
-    };
-    var url = Uri.parse("https://obstawiator.pages.dev/API/Register");
-    var request = http.Request('POST', url);
-    request.body = json.encode({"email": _emailController.text.toLowerCase(), "password": _passwordController.text, "token": _tokenController.text, "name": _usernameController.text});
-    request.headers.addAll(headers);
-    http.StreamedResponse response = await request.send();
-    if (response.statusCode == 201)
-    {
-      var result = await response.stream.bytesToString();
-      var resultJSON = json.decode(result);
-      main.userID = resultJSON['userID'];
+  void _requestNotificationPermission() {
+    if (kIsWeb) {
+      requestWebNotificationPermission();
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultJSON['message'])),
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const InitialBets()),
+        const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
       );
     }
-    else
-    {
-    }
+  }
 
+  Future<void> register() async {
+    var url = Uri.parse("https://obstawiator.pages.dev/API/Register");
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          "email": _emailController.text.toLowerCase(),
+          "password": _passwordController.text,
+          "token": _tokenController.text,
+          "name": _usernameController.text
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        var resultJSON = json.decode(response.body);
+        main.userID = resultJSON['userID'];
+        main.sessionToken = resultJSON['sessionToken'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('userID', main.userID!);
+        await prefs.setString('sessionToken', main.sessionToken!);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'])),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InitialBets()),
+        );
+      } else {
+        if (!mounted) return;
+        var resultJSON = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultJSON['message'] ?? "Błąd rejestracji")),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) print("Registration error: $e");
+    }
   }
     @override
     Widget build(BuildContext context)
@@ -71,6 +98,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _usernameController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'Nazwa użytkownika',
                       border: OutlineInputBorder(),
@@ -88,6 +116,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'E-mail',
                       border: OutlineInputBorder(),
@@ -109,6 +138,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'Hasło',
                       border: OutlineInputBorder(),
@@ -131,6 +161,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _tokenController,
+                    style: const TextStyle(fontSize: 16),
                     decoration: const InputDecoration(
                       labelText: 'Token',
                       border: OutlineInputBorder(),
@@ -144,6 +175,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _requestNotificationPermission,
+                      icon: const Icon(Icons.notifications_active),
+                      label: const Text('Włącz powiadomienia (iPhone)'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Colors.orangeAccent),
+                        foregroundColor: Colors.orangeAccent,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(

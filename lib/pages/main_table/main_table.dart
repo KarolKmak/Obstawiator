@@ -3,7 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:obstawiator/pages/main_table/table_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:obstawiator/main.dart' as main;
+import 'package:obstawiator/pages/start_page/login_page.dart';
+import 'package:obstawiator/pages/main_table/user_bets_view.dart';
 
 class MyHomePage extends StatefulWidget
 {
@@ -21,46 +24,88 @@ class _MyHomePageState extends State<MyHomePage>
 
   Future<void> fetchData() async
   {
-    // Clear existing data before fetching new data
+    // Przywróć sesję, jeśli została utracona (np. po odświeżeniu strony)
+    if (main.userID == null || main.sessionToken == null) {
+      final prefs = await SharedPreferences.getInstance();
+      main.userID = prefs.getInt('userID');
+      main.sessionToken = prefs.getString('sessionToken');
+    }
+
+    if (main.userID == null || main.sessionToken == null) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+      return;
+    }
+
     setState(() {
       userStandingsTable.clear();
     });
-    var headers =
-    {
-      'Content-Type': 'application/json'
-    };
-    var url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
-    var request = http.Request('POST', url);
-    request.body = json.encode({"ID": main.userID});
-    request.headers.addAll(headers);
-    http.StreamedResponse response = await request.send();
+    
 
-    if(response.statusCode == 200)
-    {
-      var jsonData = jsonDecode(await response.stream.bytesToString()) as List;
-      for (var i=0; i<jsonData.length; i++)
-      {
-        int id = jsonData[i]['ID'] ?? 'N/A';
-        // Ensure that values are not null before adding to the table
-        String name = jsonData[i]['name'] ?? 'N/A';
-        String championBet = jsonData[i]['championBet'] ?? 'N/A';
-        String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
-        int points = jsonData[i]['points'] ?? 0;
-        setState((){userStandingsTable.add(UserStandings(ID: id, name: name, championbet: championBet, topscorer: topScorerBet, points: points));});
-      }
-    }
-    else
-    {
-      if (kDebugMode) {
-        print("Failed, status: ${response.statusCode}");
-      }
-      final scaffold = ScaffoldMessenger.of(context);
-      scaffold.showSnackBar(
-        SnackBar(
-          content: const Text('No nie działa... co ci poradzę?'),
-          action: SnackBarAction(label: 'No ok...', onPressed: scaffold.hideCurrentSnackBar),
-        ),
+    final url = Uri.parse("https://obstawiator.pages.dev/API/GetMainTable");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': main.sessionToken ?? '',
+        },
+        body: json.encode({
+          "ID": main.userID,
+          "sessionToken": main.sessionToken
+        }),
       );
+
+      if (response.statusCode == 200) {
+        var jsonData = jsonDecode(response.body) as List;
+        for (var i = 0; i < jsonData.length; i++) {
+          int id = jsonData[i]['ID'] ?? 0;
+          String name = jsonData[i]['name'] ?? 'N/A';
+          String championBet = jsonData[i]['championBet'] ?? 'N/A';
+          String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
+          int points = jsonData[i]['points'] ?? 0;
+          setState(() {
+            userStandingsTable.add(UserStandings(
+                ID: id,
+                name: name,
+                championbet: championBet,
+                topscorer: topScorerBet,
+                points: points));
+          });
+        }
+      } else if (response.statusCode == 401) {
+        if (mounted) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('userID');
+          await prefs.remove('sessionToken');
+          main.userID = null;
+          main.sessionToken = null;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sesja wygasła. Zaloguj się ponownie.')),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+          );
+        }
+      } else {
+        if (kDebugMode) {
+          print("Failed, status: ${response.statusCode}, body: ${response.body}");
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Błąd pobierania danych')),
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print("Error fetching table: $e");
     }
   }
   @override
@@ -106,101 +151,188 @@ class _MyHomePageState extends State<MyHomePage>
     if (kDebugMode) {
       print('Row with ID $id was tapped. UserID is ${main.userID}');
     }
+
     if (id == main.userID) {
       showDialog(
-        barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
-          // Find the current user's data
-          final currentUserData = userStandingsTable.firstWhere((user) => user.ID == main.userID);
-          final TextEditingController championController = TextEditingController(text: currentUserData.championbet);
-          final TextEditingController topScorerController = TextEditingController(text: currentUserData.topscorer);
-
-          return AlertDialog(
-            title: const Text('Zmień typy'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                TextField(
-                  controller: championController,
-                  decoration: const InputDecoration(labelText: 'Mistrz'),
-                ),
-                TextField(
-                  controller: topScorerController,
-                  decoration: const InputDecoration(labelText: 'Król strzelców'),
-                ),
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Anuluj'),
+          return SimpleDialog(
+            title: const Text('Twoje konto'),
+            children: <Widget>[
+              SimpleDialogOption(
                 onPressed: () {
-                  // Dispose controllers when dialog is dismissed
-                  championController.dispose();
-                  topScorerController.dispose();
-                  Navigator.of(context).pop();
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => UserBetsView(targetUserID: id)),
+                  );
                 },
+                child: const ListTile(
+                  leading: Icon(Icons.list_alt),
+                  title: Text('Przeglądaj swoje zakłady'),
+                ),
               ),
-              TextButton(
-                child: const Text('Zapisz'),
-                onPressed: () async {
-                  final String championBet = championController.text;
-                  final String topScorerBet = topScorerController.text;
-
-                  if (championBet.isEmpty || topScorerBet.isEmpty) {
-                    // Show an error or prevent closing if fields are empty
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Oba pola muszą być wypełnione!')),
-                    );
-                    return;
-                  }
-
-                  var headers = {
-                    'Content-Type': 'application/json'
-                  };
-                  var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
-                  var request = http.Request('POST', url);
-                  request.body = json.encode({
-                    "ID": main.userID,
-                    "championBet": championBet,
-                    "topScorerBet": topScorerBet
-                  });
-                  request.headers.addAll(headers);
-
-                  http.StreamedResponse response = await request.send();
-
-                  if (response.statusCode == 201) {
-                    final responseBody = await response.stream.bytesToString();
-                    final decodedBody = jsonDecode(responseBody);
-                    final message = decodedBody['message'] ?? 'Zapisano pomyślnie!'; // Default message if not provided
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(message)),
-                    );
-
-                    // Optionally, refresh data or show success message
-                    fetchData(); // Refresh the table data
-                    championController.dispose();
-                    topScorerController.dispose();
-                    Navigator.of(context).pop();
-                  } else {
-                    // Show error message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Błąd zapisu: ${response.reasonPhrase}')),
-                    );
-                    // Optionally, keep the dialog open or handle the error in another way
-                    // For now, we'll still dispose controllers and pop the dialog
-                  }
+              SimpleDialogOption(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showEditLongTermBetsDialog();
                 },
+                child: const ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('Zmień typy długoterminowe'),
+                ),
               ),
             ],
           );
         },
       );
     } else {
-      if (kDebugMode) {
-        print("Row ID: $id does not match UserID: ${main.userID}");
-      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => UserBetsView(targetUserID: id)),
+      );
     }
+  }
+
+  void _showEditLongTermBetsDialog() {
+    final championSuggestions = userStandingsTable
+        .map((u) => u.championbet)
+        .where((s) => s != 'N/A' && s.isNotEmpty && s != 'empty')
+        .toSet()
+        .toList();
+    final topScorerSuggestions = userStandingsTable
+        .map((u) => u.topscorer)
+        .where((s) => s != 'N/A' && s.isNotEmpty && s != 'empty')
+        .toSet()
+        .toList();
+
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        // Find the current user's data
+        final currentUserData = userStandingsTable.firstWhere((user) => user.ID == main.userID);
+        String currentChampion = currentUserData.championbet;
+        String currentTopScorer = currentUserData.topscorer;
+
+        return AlertDialog(
+          title: const Text('Zmień typy'),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Autocomplete<String>(
+                      initialValue: TextEditingValue(text: currentChampion == 'empty' ? '' : currentChampion),
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return championSuggestions;
+                        }
+                        return championSuggestions.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      onSelected: (String selection) {
+                        currentChampion = selection;
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: const InputDecoration(labelText: 'Mistrz'),
+                          onChanged: (value) => currentChampion = value,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Autocomplete<String>(
+                      initialValue: TextEditingValue(text: currentTopScorer == 'empty' ? '' : currentTopScorer),
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return topScorerSuggestions;
+                        }
+                        return topScorerSuggestions.where((String option) {
+                          return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                        });
+                      },
+                      onSelected: (String selection) {
+                        currentTopScorer = selection;
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: const InputDecoration(labelText: 'Król strzelców'),
+                          onChanged: (value) => currentTopScorer = value,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Anuluj'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Zapisz'),
+              onPressed: () async {
+                if (currentChampion.isEmpty || currentTopScorer.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Oba pola muszą być wypełnione!')),
+                  );
+                  return;
+                }
+
+                var url = Uri.parse("https://obstawiator.pages.dev/API/InitialBets");
+                try {
+                  final response = await http.post(
+                    url,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': main.sessionToken ?? '',
+                    },
+                    body: json.encode({
+                      "ID": main.userID,
+                      "sessionToken": main.sessionToken,
+                      "championBet": currentChampion,
+                      "topScorerBet": currentTopScorer
+                    }),
+                  );
+
+                  if (response.statusCode == 201) {
+                    final decodedBody = jsonDecode(response.body);
+                    final message = decodedBody['message'] ?? 'Zapisano pomyślnie!';
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+
+                    fetchData(); // Refresh the table data
+                    Navigator.of(context).pop();
+                  } else {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Błąd zapisu: ${response.statusCode}')),
+                    );
+                  }
+                } catch (e) {
+                  if (kDebugMode) print("Update bets error: $e");
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   List<DataColumn> _createColumns()
@@ -224,11 +356,11 @@ class _MyHomePageState extends State<MyHomePage>
       UserStandings e = entry.value;
       final bool isUserRow = e.ID == main.userID;
       final Color? rowColor = isUserRow
-          ? Colors.blue.withOpacity(0.1) // Light blue for user row
-          : (index % 2 == 0 ? Colors.grey.withOpacity(0.1) : null); // Light grey for even rows
+          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) // Light navy for user row
+          : (index % 2 == 0 ? Colors.grey.withValues(alpha: 0.1) : null); // Light grey for even rows
 
       DataRow rowWidget = DataRow(
-          color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) => rowColor),
+          color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) => rowColor),
           cells: [
             DataCell(Text(e.name)),
             DataCell(Text(e.championbet)),
