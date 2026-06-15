@@ -25,7 +25,7 @@ export async function onRequestPost(context) {
         const { results } = await db.prepare("SELECT Matches.ID, host, guest, matchStart, Matches.homeScore, Matches.awayScore, betVisible, isGroupStage, Matches.winner, (BetMatch.homeScore IS NOT NULL) as hasBet FROM Matches LEFT JOIN BetMatch ON Matches.ID = BetMatch.matchID AND BetMatch.userID = ? WHERE matchFinished = 1 ORDER BY matchStart DESC LIMIT ? OFFSET ?").bind(userID, limit, offset).all();
         return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       } else {
-        const { results } = await db.prepare("SELECT Matches.ID, host, guest, matchStart, homeScore, awayScore, betVisible, isGroupStage, (BetMatch.homeScore IS NOT NULL) as hasBet FROM Matches LEFT JOIN BetMatch ON Matches.ID = BetMatch.matchID AND BetMatch.userID = ? WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT ? OFFSET ?").bind(userID, limit, offset).all();
+        const { results } = await db.prepare("SELECT Matches.ID, host, guest, matchStart, Matches.homeScore, Matches.awayScore, betVisible, isGroupStage, (BetMatch.homeScore IS NOT NULL) as hasBet FROM Matches LEFT JOIN BetMatch ON Matches.ID = BetMatch.matchID AND BetMatch.userID = ? WHERE matchFinished = 0 ORDER BY matchStart ASC LIMIT ? OFFSET ?").bind(userID, limit, offset).all();
         return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     } else {
