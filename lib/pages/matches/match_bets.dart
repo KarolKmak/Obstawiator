@@ -346,6 +346,8 @@ class _MatchBetsState extends State<MatchBets> {
       case 'algieria': return '🇩🇿';
       case 'jordania': return '🇯🇴';
       case 'kolumbia': return '🇨🇴';
+      case 'demokratyczna republika konga':
+      case 'demokratyczna republika kongu':
       case 'demokratyczna republika kongo': return '🇨🇩';
       case 'uzbekistan': return '🇺🇿';
       case 'ghana': return '🇬🇭';

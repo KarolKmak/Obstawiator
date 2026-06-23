@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:obstawiator/main.dart' as main;
 import 'package:http/http.dart' as http;
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:obstawiator/pages/matches/match_bets.dart';
@@ -127,6 +126,8 @@ class Match {
       case 'algieria': return '🇩🇿';
       case 'jordania': return '🇯🇴';
       case 'kolumbia': return '🇨🇴';
+      case 'demokratyczna republika konga':
+      case 'demokratyczna republika kongu':
       case 'demokratyczna republika kongo': return '🇨🇩';
       case 'uzbekistan': return '🇺🇿';
       case 'ghana': return '🇬🇭';
@@ -141,8 +142,9 @@ class Match {
       case 'stany zjednoczone': return 'USA';
       case 'republika południowej afryki': return 'RPA';
       case 'wybrzeże kości słoniowej': return 'WKS';
-      case 'demokratyczna republika kongo':
-      case 'demokratyczna republika kongu': return 'DR Kongo';
+      case 'demokratyczna republika konga':
+      case 'demokratyczna republika kongu':
+      case 'demokratyczna republika kongo': return 'DR Kongo';
       case 'korea południowa': return 'Korea Płd.';
       case 'bośnia i hercegowina': return 'Bośnia';
       case 'republika zielonego przylądka': return 'Z. Przylądek';
@@ -179,10 +181,8 @@ class _MatchListState extends State<MatchList> {
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('pl_PL', null).then((_) {
-      _loadUpcomingMatches();
-      _loadFinishedMatches();
-    });
+    _loadUpcomingMatches();
+    _loadFinishedMatches();
   }
 
   Future<void> _loadUpcomingMatches() async {
@@ -274,6 +274,20 @@ class _MatchListState extends State<MatchList> {
     }
   }
 
+  Future<void> _refreshMatches() async {
+    if (!mounted) return;
+    setState(() {
+      _upcomingMatches.clear();
+      _upcomingOffset = 0;
+      _hasMoreUpcoming = true;
+      _finishedMatches.clear();
+      _finishedOffset = 0;
+      _hasMoreFinished = true;
+    });
+    await _loadUpcomingMatches();
+    await _loadFinishedMatches();
+  }
+
   void _handleSessionExpired() async {
     if (mounted) {
       final prefs = await SharedPreferences.getInstance();
@@ -329,8 +343,8 @@ class _MatchListState extends State<MatchList> {
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => MatchBets(
@@ -346,6 +360,7 @@ class _MatchListState extends State<MatchList> {
                   ),
                 ),
               );
+              _refreshMatches();
             },
             child: ListTile(
               title: Row(
@@ -457,52 +472,56 @@ class _MatchListState extends State<MatchList> {
       appBar: const main.ObstawiatorAppBar(),
       body: Material(
         color: Theme.of(context).colorScheme.surface,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Upcoming Matches Section
-              if (_upcomingMatches.isNotEmpty) ...[
+        child: RefreshIndicator(
+          onRefresh: _refreshMatches,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                // Upcoming Matches Section
+                if (_upcomingMatches.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('Nadchodzące mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  ),
+                  ..._upcomingMatches.map((m) => _buildMatchCard(m)),
+                  if (_hasMoreUpcoming)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoadingUpcoming ? null : _loadUpcomingMatches,
+                        label: _isLoadingUpcoming ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej nadchodzących'),
+                        icon: const Icon(Icons.add),
+                      ),
+                    ),
+                ],
+
+                const Divider(thickness: 2, height: 40),
+
+                // Finished Matches Section
                 const Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Text('Nadchodzące mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  child: Text('Zakończone mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 ),
-                ..._upcomingMatches.map((m) => _buildMatchCard(m)),
-                if (_hasMoreUpcoming)
+                if (_finishedMatches.isEmpty && !_hasMoreFinished)
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('Brak zakończonych meczów'),
+                  ),
+                ..._finishedMatches.map((m) => _buildMatchCard(m)),
+                
+                if (_hasMoreFinished)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: ElevatedButton.icon(
-                      onPressed: _isLoadingUpcoming ? null : _loadUpcomingMatches,
-                      label: _isLoadingUpcoming ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej nadchodzących'),
-                      icon: const Icon(Icons.add),
+                      onPressed: _isLoadingFinished ? null : _loadFinishedMatches,
+                      label: _isLoadingFinished ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej zakończonych'),
+                      icon: const Icon(Icons.history),
                     ),
                   ),
+                const SizedBox(height: 80), // Space for FAB/BottomBar
               ],
-
-              const Divider(thickness: 2, height: 40),
-
-              // Finished Matches Section
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Zakończone mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              ),
-              if (_finishedMatches.isEmpty && !_hasMoreFinished)
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('Brak zakończonych meczów'),
-                ),
-              ..._finishedMatches.map((m) => _buildMatchCard(m)),
-              
-              if (_hasMoreFinished)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoadingFinished ? null : _loadFinishedMatches,
-                    label: _isLoadingFinished ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej zakończonych'),
-                    icon: const Icon(Icons.history),
-                  ),
-                ),
-              const SizedBox(height: 80), // Space for FAB/BottomBar
-            ],
+            ),
           ),
         ),
       ),

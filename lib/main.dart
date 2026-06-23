@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:obstawiator/utils/notification_helper.dart';
 import 'package:obstawiator/pages/main_table/main_table.dart';
@@ -38,6 +39,8 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final isDarkMode = prefs.getBool('isDarkMode') ?? false;
   themeNotifier.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+
+  await initializeDateFormatting('pl_PL', null);
 
   runApp(const MyApp());
 }
