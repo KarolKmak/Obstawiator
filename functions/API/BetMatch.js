@@ -20,7 +20,16 @@ export async function onRequestPost(context) {
       return new Response(JSON.stringify({ message: "Sesja wygasła. Zaloguj się ponownie." }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
-    const { results: matchResults } = await db.prepare("SELECT matchStart FROM Matches WHERE ID = ?").bind(reqBody.matchID).all();
+    const { results: matchResults } = await db.prepare("SELECT matchStart, matchFinished FROM Matches WHERE ID = ?").bind(reqBody.matchID).all();
+
+    if (matchResults.length === 0) {
+      return new Response(JSON.stringify({ message: "Mecz nie istnieje" }), { status: 404 });
+    }
+
+    // Sprawdzanie czy mecz nie jest już zakończony
+    if (matchResults[0].matchFinished === 1) {
+      return new Response(JSON.stringify({ message: "Mecz został już zakończony, nie można zmieniać zakładów" }), { status: 403 });
+    }
 
     // Sprawdzanie czy gra się jeszcze nie rozpoczęła
     if (Date.now() > matchResults[0].matchStart) {
