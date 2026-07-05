@@ -65,34 +65,39 @@ export async function onRequestPost(context) {
       if (row.matchFinished && row.betHome !== null && row.betAway !== null) {
         calculated = true;
 
-        // Logika punktacji (identyczna jak w MatchResult.js)
         const actualHome = row.actualHome;
         const actualAway = row.actualAway;
         const betHome = row.betHome;
         const betAway = row.betAway;
+        const isGroupStage = row.isGroupStage === 'true' || row.isGroupStage === 1 || row.isGroupStage === true;
 
-        let actualW;
-        if (actualHome > actualAway) actualW = 0;
-        else if (actualHome < actualAway) actualW = 1;
-        else actualW = 2;
+        if (isGroupStage) {
+          // Logika punktacji grupowej
+          let actualW;
+          if (actualHome > actualAway) actualW = 0;
+          else if (actualHome < actualAway) actualW = 1;
+          else actualW = 2;
 
-        let betW;
-        if (betHome > betAway) betW = 0;
-        else if (betHome < betAway) betW = 1;
-        else betW = 2;
+          let betW;
+          if (betHome > betAway) betW = 0;
+          else if (betHome < betAway) betW = 1;
+          else betW = 2;
 
-        const actualDiff = actualHome - actualAway;
-        const betDiff = betHome - betAway;
+          const actualDiff = actualHome - actualAway;
+          const betDiff = betHome - betAway;
 
-        if (actualW === betW) points += 1;
-        if (actualDiff === betDiff) points += 1;
-        if (actualHome === betHome && actualAway === betAway) points += 3;
-
-        // Dodatkowa logika dla fazy pucharowej (jeśli winner w Matches jest ustawiony)
-        // Wg regulaminu: Wybór zwycięzcy (awans): 2 pkt, Dokładny wynik (90 min): 4 pkt
-        // Ale MatchResult.js używa prostszego modelu. Trzymajmy się spójności z MatchResult.js
-        // lub zaimplementujmy pełną logikę jeśli mamy dane.
-        // Na razie zostawiam model z MatchResult.js (max 5 pkt).
+          if (actualW === betW) points += 1;
+          if (actualDiff === betDiff) points += 1;
+          if (actualHome === betHome && actualAway === betAway) points = 5; // Dokładny wynik = 5 pkt
+        } else {
+          // Logika punktacji pucharowej
+          if (row.betWinner !== null && row.actualWinner !== null && row.betWinner === row.actualWinner) {
+            points += 2;
+          }
+          if (actualHome === betHome && actualAway === betAway) {
+            points += 4;
+          }
+        }
       }
 
       return {
@@ -105,6 +110,9 @@ export async function onRequestPost(context) {
         matchFinished: row.matchFinished,
         betHome: row.betHome,
         betAway: row.betAway,
+        betWinner: row.betWinner,
+        isGroupStage: row.isGroupStage === 'true' || row.isGroupStage === 1 || row.isGroupStage === true,
+        actualWinner: row.actualWinner,
         points: calculated ? points : null,
         isFuture: row.matchStart > Date.now() && !row.matchFinished
       };
