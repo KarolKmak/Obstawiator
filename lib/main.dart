@@ -61,6 +61,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 int? userID;
 String? sessionToken;
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+final ValueNotifier<int> unplacedBetsNotifier = ValueNotifier(0);
 
 class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -91,8 +92,12 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
             } else if (value == 'powiadomienia') {
               requestWebNotificationPermission();
               if (!kIsWeb) {
+                String msg = 'Powiadomienia konfiguruje się w ustawieniach systemu.';
+                if (defaultTargetPlatform == TargetPlatform.iOS) {
+                  msg = 'Aby otrzymywać powiadomienia na iPhone, dodaj aplikację do ekranu głównego (Share -> Add to Home Screen).';
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
+                  SnackBar(content: Text(msg)),
                 );
               }
             } else if (value == 'regulamin') {
@@ -128,7 +133,7 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
               value: 'powiadomienia',
               child: ListTile(
                 leading: Icon(Icons.notifications_active),
-                title: Text('Powiadomienia iPhone'),
+                title: Text('Powiadomienia'),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -256,41 +261,115 @@ class ObstawiatorAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 class ObstawiatorBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
+  final Function(int)? onTap;
 
   const ObstawiatorBottomNavigationBar({
     super.key,
     required this.currentIndex,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
+      items: <BottomNavigationBarItem>[
+        const BottomNavigationBarItem(
           icon: Icon(Icons.table_chart),
           label: 'Tabela Główna',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.list),
+          icon: ValueListenableBuilder<int>(
+            valueListenable: unplacedBetsNotifier,
+            builder: (context, count, child) {
+              return Badge(
+                label: Text(count.toString()),
+                isLabelVisible: count > 0,
+                child: const Icon(Icons.list),
+              );
+            },
+          ),
           label: 'Lista Meczów',
         ),
       ],
       currentIndex: currentIndex,
       selectedItemColor: Colors.blueAccent,
       onTap: (index) {
-        if (index == currentIndex) return;
-        if (index == 0) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MyHomePage()),
-          );
-        } else if (index == 1) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MatchList()),
-          );
+        if (onTap != null) {
+          onTap!(index);
+        } else {
+          if (index == currentIndex) return;
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MyHomePage()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MatchList()),
+            );
+          }
         }
       },
+    );
+  }
+}
+
+class MainNavigationContainer extends StatefulWidget {
+  final int initialPage;
+  const MainNavigationContainer({super.key, this.initialPage = 0});
+
+  @override
+  State<MainNavigationContainer> createState() => _MainNavigationContainerState();
+}
+
+class _MainNavigationContainerState extends State<MainNavigationContainer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialPage;
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _onNavBarTap(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const ObstawiatorAppBar(),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        children: const [
+          MyHomePage(),
+          MatchList(),
+        ],
+      ),
+      bottomNavigationBar: ObstawiatorBottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onNavBarTap,
+      ),
     );
   }
 }

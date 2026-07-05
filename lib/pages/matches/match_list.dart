@@ -7,6 +7,7 @@ import 'package:obstawiator/pages/matches/match_bets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:obstawiator/pages/start_page/login_page.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 
 /// Reprezentuje mecz pomiędzy dwiema drużynami.
 class Match {
@@ -20,6 +21,13 @@ class Match {
   bool hasBet;
   final bool isGroupStage;
   final int? winner;
+
+  bool isUrgent() {
+    final now = DateTime.now();
+    final difference = matchStart.difference(now);
+    return difference.inHours >= 0 && difference.inHours < 12 && !matchStart.isBefore(now);
+  }
+
   /// Tworzy obiekt [Match].
   Match({
     required this.host,
@@ -178,11 +186,30 @@ class _MatchListState extends State<MatchList> {
   bool _isLoadingUpcoming = false;
   bool _isLoadingFinished = false;
 
+  Timer? _countdownTimer;
+
   @override
   void initState() {
     super.initState();
     _loadUpcomingMatches();
     _loadFinishedMatches();
+    _startCountdownTimer();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdownTimer() {
+    _countdownTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild to update countdowns
+        });
+      }
+    });
   }
 
   Future<void> _loadUpcomingMatches() async {
@@ -216,6 +243,10 @@ class _MatchListState extends State<MatchList> {
             _hasMoreUpcoming = false;
           }
           _isLoadingUpcoming = false;
+          
+          // Update global unplaced bets count
+          int unplacedCount = _upcomingMatches.where((m) => !m.hasBet).length;
+          main.unplacedBetsNotifier.value = unplacedCount;
         });
       } else if (response.statusCode == 401) {
         _handleSessionExpired();
@@ -320,21 +351,43 @@ class _MatchListState extends State<MatchList> {
         ? screenWidth 
         : (600 + (screenWidth - 600) * 0.3).clamp(0.0, 1000.0);
 
-    final bool isNotPlaced = !match.hasBet && match.matchStart.isAfter(DateTime.now());
+    final now = DateTime.now();
+    final bool isNotPlaced = !match.hasBet && match.matchStart.isAfter(now);
+    final bool isUrgentNoBet = isNotPlaced && match.isUrgent();
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    Color? cardColor;
+    if (isUrgentNoBet) {
+      cardColor = isDarkMode ? Colors.red.withOpacity(0.15) : Colors.red.withOpacity(0.1);
+    } else if (isNotPlaced) {
+      cardColor = isDarkMode ? Colors.orange.withOpacity(0.05) : Colors.orange.withOpacity(0.1);
+    }
+
+    // Obliczanie czasu do meczu
+    String countdownText = "";
+    final difference = match.matchStart.difference(now);
+    if (difference.inMinutes > 0) {
+      if (difference.inDays > 0) {
+        countdownText = "Za: ${difference.inDays}d ${difference.inHours % 24}h";
+      } else if (difference.inHours > 0) {
+        countdownText = "Za: ${difference.inHours}h ${difference.inMinutes % 60}m";
+      } else {
+        countdownText = "Za: ${difference.inMinutes}m";
+      }
+    }
 
     return Center(
       child: Container(
         width: containerWidth,
         constraints: const BoxConstraints(minWidth: 300),
         child: Card(
-          color: isNotPlaced 
-            ? (isDarkMode ? Colors.orange.withOpacity(0.05) : Colors.orange.withOpacity(0.1)) 
-            : null,
+          color: cardColor,
           shape: isNotPlaced
               ? RoundedRectangleBorder(
                   side: BorderSide(
-                    color: isDarkMode ? Colors.orange.withOpacity(0.5) : Colors.orange, 
+                    color: isUrgentNoBet 
+                      ? (isDarkMode ? Colors.red.withOpacity(0.7) : Colors.red)
+                      : (isDarkMode ? Colors.orange.withOpacity(0.5) : Colors.orange), 
                     width: isDarkMode ? 1.0 : 1.5
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -457,9 +510,34 @@ class _MatchListState extends State<MatchList> {
               ),
               subtitle: Column(
                 children: [
-                  Text(
-                    DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart),
-                    textAlign: TextAlign.center,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (countdownText.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: difference.inHours < 1 
+                                ? Colors.red.withOpacity(0.1) 
+                                : Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            countdownText,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: difference.inHours < 1 ? Colors.red : Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
                     match.isGroupStage ? "Faza grupowa" : "Faza pucharowa",
@@ -476,64 +554,60 @@ class _MatchListState extends State<MatchList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const main.ObstawiatorAppBar(),
-      body: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: RefreshIndicator(
-          onRefresh: _refreshMatches,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                // Upcoming Matches Section
-                if (_upcomingMatches.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Nadchodzące mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  ),
-                  ..._upcomingMatches.map((m) => _buildMatchCard(m)),
-                  if (_hasMoreUpcoming)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoadingUpcoming ? null : _loadUpcomingMatches,
-                        label: _isLoadingUpcoming ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej nadchodzących'),
-                        icon: const Icon(Icons.add),
-                      ),
-                    ),
-                ],
-
-                const Divider(thickness: 2, height: 40),
-
-                // Finished Matches Section
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: RefreshIndicator(
+        onRefresh: _refreshMatches,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Upcoming Matches Section
+              if (_upcomingMatches.isNotEmpty) ...[
                 const Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Text('Zakończone mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  child: Text('Nadchodzące mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 ),
-                if (_finishedMatches.isEmpty && !_hasMoreFinished)
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Brak zakończonych meczów'),
-                  ),
-                ..._finishedMatches.map((m) => _buildMatchCard(m)),
-                
-                if (_hasMoreFinished)
+                ..._upcomingMatches.map((m) => _buildMatchCard(m)),
+                if (_hasMoreUpcoming)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: ElevatedButton.icon(
-                      onPressed: _isLoadingFinished ? null : _loadFinishedMatches,
-                      label: _isLoadingFinished ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej zakończonych'),
-                      icon: const Icon(Icons.history),
+                      onPressed: _isLoadingUpcoming ? null : _loadUpcomingMatches,
+                      label: _isLoadingUpcoming ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej nadchodzących'),
+                      icon: const Icon(Icons.add),
                     ),
                   ),
-                const SizedBox(height: 80), // Space for FAB/BottomBar
               ],
-            ),
+
+              const Divider(thickness: 2, height: 40),
+
+              // Finished Matches Section
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Zakończone mecze', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              ),
+              if (_finishedMatches.isEmpty && !_hasMoreFinished)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Brak zakończonych meczów'),
+                ),
+              ..._finishedMatches.map((m) => _buildMatchCard(m)),
+              
+              if (_hasMoreFinished)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoadingFinished ? null : _loadFinishedMatches,
+                    label: _isLoadingFinished ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Załaduj więcej zakończonych'),
+                    icon: const Icon(Icons.history),
+                  ),
+                ),
+              const SizedBox(height: 80), // Space for FAB/BottomBar
+            ],
           ),
         ),
       ),
-      bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 1),
     );
   }
 }

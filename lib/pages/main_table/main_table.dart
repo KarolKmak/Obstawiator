@@ -21,6 +21,28 @@ class _MyHomePageState extends State<MyHomePage>
 {
 
   List<UserStandings> userStandingsTable = [];
+  Map<int, int> _previousRanks = {};
+
+  Future<void> _loadPreviousRanks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? ranksJson = prefs.getString('savedRanks');
+    if (ranksJson != null) {
+      try {
+        final Map<String, dynamic> decoded = jsonDecode(ranksJson);
+        setState(() {
+          _previousRanks = decoded.map((key, value) => MapEntry(int.parse(key), value as int));
+        });
+      } catch (e) {
+        if (kDebugMode) print("Error decoding ranks: $e");
+      }
+    }
+  }
+
+  Future<void> _saveCurrentRanks(Map<int, int> currentRanks) async {
+    final prefs = await SharedPreferences.getInstance();
+    final Map<String, int> toSave = currentRanks.map((key, value) => MapEntry(key.toString(), value));
+    await prefs.setString('savedRanks', jsonEncode(toSave));
+  }
 
   Future<void> fetchData() async
   {
@@ -62,20 +84,44 @@ class _MyHomePageState extends State<MyHomePage>
 
       if (response.statusCode == 200) {
         var jsonData = jsonDecode(response.body) as List;
+        List<UserStandings> newStandings = [];
         for (var i = 0; i < jsonData.length; i++) {
           int id = jsonData[i]['ID'] ?? 0;
           String name = jsonData[i]['name'] ?? 'N/A';
           String championBet = jsonData[i]['championBet'] ?? 'N/A';
           String topScorerBet = jsonData[i]['topScorerBet'] ?? 'N/A';
           int points = jsonData[i]['points'] ?? 0;
-          setState(() {
-            userStandingsTable.add(UserStandings(
-                ID: id,
-                name: name,
-                championbet: championBet,
-                topscorer: topScorerBet,
-                points: points));
-          });
+          newStandings.add(UserStandings(
+              ID: id,
+              name: name,
+              championbet: championBet,
+              topscorer: topScorerBet,
+              points: points));
+        }
+
+        // Sort to calculate current ranks
+        newStandings.sort((a, b) => b.points.compareTo(a.points));
+        Map<int, int> currentRanks = {};
+        if (newStandings.isNotEmpty) {
+          int currentRank = 1;
+          for (int i = 0; i < newStandings.length; i++) {
+            if (i > 0 && newStandings[i].points < newStandings[i - 1].points) {
+              currentRank = i + 1;
+            }
+            currentRanks[newStandings[i].ID] = currentRank;
+          }
+        }
+
+        setState(() {
+          userStandingsTable = newStandings;
+        });
+
+        // Only save to SharedPreferences if it's a "fresh" start or explicitly requested.
+        // To prevent arrows from disappearing on every refresh, we save current state
+        // only if no previous data existed. Subsequent updates in this session won't 
+        // overwrite _previousRanks (loaded in initState) until next app restart.
+        if (_previousRanks.isEmpty) {
+          _saveCurrentRanks(currentRanks);
         }
       } else if (response.statusCode == 401) {
         if (mounted) {
@@ -111,40 +157,36 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   void initState()
   {
-    // TODO: implement initState
     super.initState();
-    fetchData();
+    _loadPreviousRanks().then((_) => fetchData());
   }
 
 
 
   @override
-  Widget build(BuildContext context)
-  {
-    return Scaffold(
-      appBar: const main.ObstawiatorAppBar(),
-      body: Center(
-        child: SizedBox.expand(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: DataTable(
-                      columnSpacing: constraints.maxWidth < 600 ? 10 : null, // Adjust column spacing for narrow screens
-                      dividerThickness: 1, // Add a divider between columns
-                      columns: _createColumns(),
-                      showCheckboxColumn: false, // Add this line
-                      rows: _createRows()),
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox.expand(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: DataTable(
+                  columnSpacing: constraints.maxWidth < 600 ? 10 : null,
+                  dividerThickness: 1,
+                  columns: _createColumns(),
+                  showCheckboxColumn: false,
+                  rows: _createRows(),
                 ),
               ),
             ),
           ),
         ),
       ),
-      bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 0),
     );
   }
   void _handleRowTap(int id) {
@@ -350,10 +392,44 @@ class _MyHomePageState extends State<MyHomePage>
     // Sort userStandingsTable by points in descending order before mapping to rows
     List<UserStandings> sortedStandings = List.from(userStandingsTable)..sort((a, b) => b.points.compareTo(a.points));
 
+    // Calculate ranks to handle ex-aequo
+    Map<int, int> userRanks = {};
+    if (sortedStandings.isNotEmpty) {
+      int currentRank = 1;
+      for (int i = 0; i < sortedStandings.length; i++) {
+        if (i > 0 && sortedStandings[i].points < sortedStandings[i - 1].points) {
+          currentRank = i + 1;
+        }
+        userRanks[sortedStandings[i].ID] = currentRank;
+      }
+    }
+
     return sortedStandings.asMap().entries.map((entry)
     {
       int index = entry.key;
       UserStandings e = entry.value;
+      final int rank = userRanks[e.ID] ?? (index + 1);
+      final int? prevRank = _previousRanks[e.ID];
+      
+      Widget rankChangeIndicator = const SizedBox.shrink();
+      if (prevRank != null && prevRank != rank) {
+        bool promoted = rank < prevRank;
+        rankChangeIndicator = Icon(
+          promoted ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+          color: promoted ? Colors.green : Colors.red,
+          size: 18,
+        );
+      }
+
+      String medal = "";
+      if (rank == 1) {
+        medal = "🥇";
+      } else if (rank == 2) {
+        medal = "🥈";
+      } else if (rank == 3) {
+        medal = "🥉";
+      }
+
       final bool isUserRow = e.ID == main.userID;
       final Color? rowColor = isUserRow
           ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1) // Light navy for user row
@@ -362,7 +438,29 @@ class _MyHomePageState extends State<MyHomePage>
       DataRow rowWidget = DataRow(
           color: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) => rowColor),
           cells: [
-            DataCell(Text(e.name)),
+            DataCell(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Text(medal, style: const TextStyle(fontSize: 16)),
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: rankChangeIndicator,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(e.name),
+                ],
+              ),
+            ),
             DataCell(Text(e.championbet)),
             DataCell(Text(e.topscorer)),
             DataCell(Text(e.points.toString())),

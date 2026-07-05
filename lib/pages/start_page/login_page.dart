@@ -39,7 +39,7 @@ class _LoginPageState extends State<LoginPage>
       main.sessionToken = savedToken;
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+          MaterialPageRoute(builder: (context) => const main.MainNavigationContainer()),
         );
       }
     }
@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage>
             SnackBar(content: Text(resultJSON['message'])),
           );
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const main_table.MyHomePage()),
+            MaterialPageRoute(builder: (context) => const main.MainNavigationContainer()),
           );
         } else {
           if (!mounted) return;

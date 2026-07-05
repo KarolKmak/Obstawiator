@@ -183,6 +183,9 @@ class _MatchBetsState extends State<MatchBets> {
       );
       if (response.statusCode == 201) {
         print('Bet placed successfully');
+        if (mounted) {
+          _showSuccessConfirmation();
+        }
         fetchMatchBets(); // Refresh bets after successful submission
       } else {
         final responseBody = json.decode(response.body);
@@ -199,6 +202,47 @@ class _MatchBetsState extends State<MatchBets> {
     }
   }
 
+  void _showSuccessConfirmation() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        Future.delayed(const Duration(seconds: 1), () {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        });
+        return Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, color: Colors.green.shade600, size: 64),
+                const SizedBox(height: 16),
+                const Text(
+                  'Zakład przyjęty!',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // State variable to hold the selected winner
   int? _selectedWinner; // null: no winner, 0: host, 1: guest
 
@@ -207,122 +251,228 @@ class _MatchBetsState extends State<MatchBets> {
   void placeBet(BuildContext context) {
     print("Placing bet for match ID: ${widget.matchID}");
 
-    // Example of how you might show a dialog to get input:
+    // Use current bet values if they exist, otherwise start at 0
+    int dialogHomeScore = userBetData?['homeScore'] ?? 0;
+    int dialogAwayScore = userBetData?['awayScore'] ?? 0;
+    int? dialogSelectedWinner = userBetData?['winner'] ?? _selectedWinner;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        TextEditingController homeScoreController = TextEditingController();
-        TextEditingController awayScoreController = TextEditingController();
-        // Use a StatefulWidget for the dialog content to manage the checkbox state
-        int? dialogSelectedWinner = _selectedWinner; // Initialize with current selection or null
-
         return AlertDialog(
-          title: Text('Obstaw zakład'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              // StatefulBuilder to manage checkbox state within the dialog
-              StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  void updateWinnerBasedOnScore() {
-                    final h = int.tryParse(homeScoreController.text);
-                    final a = int.tryParse(awayScoreController.text);
-                    if (h != null && a != null) {
-                      if (h > a) {
-                        setState(() => dialogSelectedWinner = 0);
-                      } else if (a > h) {
-                        setState(() => dialogSelectedWinner = 1);
-                      }
-                    }
-                  }
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: const EdgeInsets.only(top: 16),
+          title: Center(
+            child: Text(
+              'Obstaw wynik',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              void updateWinnerBasedOnScore() {
+                if (dialogHomeScore > dialogAwayScore) {
+                  setState(() => dialogSelectedWinner = 0);
+                } else if (dialogAwayScore > dialogHomeScore) {
+                  setState(() => dialogSelectedWinner = 1);
+                }
+              }
 
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (!widget.isGroupStage)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Text('Zakład na wynik dotyczy tylko regulaminowego czasu gry.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[700])),
-                        ),
+              Widget buildScoreStepper(String label, String flag, int score, Function(int) onUpdate) {
+                final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+                final Color minusColor = isDarkMode ? Colors.red[300]! : Colors.redAccent;
+                final Color plusColor = isDarkMode ? Colors.green[300]! : Colors.green;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
                       Row(
                         children: [
-                          if (!widget.isGroupStage)
-                            Checkbox(
-                              value: dialogSelectedWinner == 0, // 0 for host
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  dialogSelectedWinner = value! ? 0 : null;
-                                });
-                              },
-                            ),
+                          Text(flag, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 8),
                           Expanded(
-                            child: TextField(
-                              controller: homeScoreController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(fontSize: 16),
-                              decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
-                              onChanged: (_) {
-                                if (!widget.isGroupStage) updateWinnerBasedOnScore();
-                              },
+                            child: Text(
+                              label,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (!widget.isGroupStage)
-                            Checkbox(
-                              value: dialogSelectedWinner == 1, // 1 for guest
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  dialogSelectedWinner = value! ? 1 : null;
-                                });
-                              },
-                            ),
-                          Expanded(
-                            child: TextField(
-                              controller: awayScoreController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(fontSize: 16),
-                              decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
-                              onChanged: (_) {
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(Icons.remove_circle, size: 32, color: minusColor),
+                            onPressed: score > 0 ? () {
+                              setState(() {
+                                onUpdate(score - 1);
                                 if (!widget.isGroupStage) updateWinnerBasedOnScore();
-                              },
+                              });
+                            } : null,
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: Text(
+                              score.toString(),
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(Icons.add_circle, size: 32, color: plusColor),
+                            onPressed: () {
+                              setState(() {
+                                onUpdate(score + 1);
+                                if (!widget.isGroupStage) updateWinnerBasedOnScore();
+                              });
+                            },
                           ),
                         ],
                       ),
                     ],
-                  );
-                },
-              ),
-            ],
+                  ),
+                );
+              }
+
+              Widget buildWinnerButton(String label, String flag, int index) {
+                final bool isSelected = dialogSelectedWinner == index;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => dialogSelectedWinner = index),
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: isSelected ? 1.0 : 0.4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                            : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(flag, style: const TextStyle(fontSize: 16)),
+                                if (isSelected) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.trending_up, size: 16, color: Colors.green),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (!widget.isGroupStage) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Text(
+                          'Wybierz wynik (90 min) oraz drużynę, która awansuje.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                    buildScoreStepper(widget.host, getFlag(widget.host), dialogHomeScore, (val) => dialogHomeScore = val),
+                    const SizedBox(height: 8),
+                    buildScoreStepper(widget.guest, getFlag(widget.guest), dialogAwayScore, (val) => dialogAwayScore = val),
+                    if (!widget.isGroupStage) ...[
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(
+                          'Kto awansuje dalej?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          buildWinnerButton(widget.host, getFlag(widget.host), 0),
+                          const SizedBox(width: 8),
+                          buildWinnerButton(widget.guest, getFlag(widget.guest), 1),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           actions: <Widget>[
             TextButton(
-              child: Text('Anuluj'),
+              child: Text('Anuluj', style: TextStyle(color: Colors.grey[600])),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
-              child: Text('Zatwierdź'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+              ),
+              child: const Text('Zatwierdź'),
               onPressed: () {
-                final homeScore = homeScoreController.text;
-                final awayScore = awayScoreController.text;
-                // Validation for non-group stage: winner must be selected
                 if (!widget.isGroupStage && dialogSelectedWinner == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Musisz wybrać zwycięzcę meczu.'),
+                    const SnackBar(
+                      content: Text('Musisz wybrać zwycięzcę meczu (awans).'),
                       backgroundColor: Colors.red,
                     ),
                   );
-                  return; // Prevent submission
-                }
-                if (homeScore.isEmpty || awayScore.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Musisz podać wynik.')));
                   return;
                 }
-                submitBet(homeScore, awayScore, dialogSelectedWinner);
+                submitBet(dialogHomeScore.toString(), dialogAwayScore.toString(), dialogSelectedWinner);
                 Navigator.of(context).pop();
               },
             ),
@@ -330,8 +480,9 @@ class _MatchBetsState extends State<MatchBets> {
         );
       },
     );
-    fetchMatchBets(); // Keep this call if you also want to refresh on placeBet
-  }  String getFlag(String countryName) {
+  }
+
+  String getFlag(String countryName) {
     switch (countryName.toLowerCase().trim()) {
       case 'polska': return '🇵🇱';
       case 'niemcy': return '🇩🇪';
@@ -417,19 +568,34 @@ class _MatchBetsState extends State<MatchBets> {
     final timeToMatch = widget.matchStart.difference(DateTime.now());
     // Show warning if no bet is placed and the match is less than 2 hours away, but not if it's less than 0 minutes away
     final bool showWarning = userBet == null && timeToMatch.inHours < 2 && timeToMatch.inMinutes > 0;
+    final bool isExpired = widget.homeScore != null;
+
     return Scaffold(
       appBar: const main.ObstawiatorAppBar(),
-      bottomNavigationBar: const main.ObstawiatorBottomNavigationBar(currentIndex: 1),
       body: Padding(
         padding: const EdgeInsets.only(bottom: 16.0), // Keep bottom padding, remove others for Container
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Container(
-              width: double.infinity, // Make Container take full width
-              padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0, bottom: 12.0), // Apply padding here
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 24.0, left: 16.0, right: 16.0, bottom: 24.0),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary, // Adaptive background
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: DefaultTextStyle(
                 style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
@@ -437,27 +603,69 @@ class _MatchBetsState extends State<MatchBets> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      RichText(
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
-                          children: <TextSpan>[
-                            TextSpan(text: '${getFlag(widget.host)} ${widget.host} '),
-                            TextSpan(
-                              text: '${widget.homeScore ?? '-'} : ${widget.awayScore ?? '-'}',
-                              style: const TextStyle(color: Color(0xFFFFD700)), // Gold score
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(getFlag(widget.host), style: const TextStyle(fontSize: 40)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.host,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ],
                             ),
-                            TextSpan(text: ' ${widget.guest} ${getFlag(widget.guest)}'),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${widget.homeScore ?? '-'} : ${widget.awayScore ?? '-'}',
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFFFD700), // Gold score
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(getFlag(widget.guest), style: const TextStyle(fontSize: 40)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.guest,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('dd/MM HH:mm').format(widget.matchStart),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                        textAlign: TextAlign.center,
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          DateFormat('EEEE, dd MMMM HH:mm', 'pl_PL').format(widget.matchStart),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),
@@ -467,7 +675,7 @@ class _MatchBetsState extends State<MatchBets> {
             const SizedBox(height: 20),
             Center( // Center the Tile horizontally
               child: Tooltip(
-                message: 'Kliknij, aby dodać/zmienić swój zakład',
+                message: isExpired ? 'Obstawianie zakończone' : 'Kliknij, aby dodać/zmienić swój zakład',
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -475,29 +683,32 @@ class _MatchBetsState extends State<MatchBets> {
                       elevation: 4.0, // Add some shadow for depth
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)), // Added rounded corners
                       child: InkWell( // Make the Card tappable
-                        onTap: () => placeBet(context),
+                        onTap: isExpired ? null : () => placeBet(context),
                         borderRadius: BorderRadius.circular(8.0), // Ensure hover effect respects rounded corners
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0), // Padding inside the tile
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min, // Row takes minimum space needed
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Column(
-                                children: [
-                                  Text(
-                                    'Mój zakład: ${userBetData != null ? (userBetData!['homeScore']?.toString() ?? '-') + ' : ' + (userBetData!['awayScore']?.toString() ?? '-') : "Nie obstawiono"}',
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  if (userWinnerDisplay != null) Text('Zwycięzca: $userWinnerDisplay', style: Theme.of(context).textTheme.titleSmall),
-                                ],
-                              ),
-                              if (showWarning)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Icon(Icons.warning, color: Colors.red, size: 24.0),
+                        child: Opacity(
+                          opacity: isExpired ? 0.7 : 1.0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0), // Padding inside the tile
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min, // Row takes minimum space needed
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Mój zakład: ${userBetData != null ? (userBetData!['homeScore']?.toString() ?? '-') + ' : ' + (userBetData!['awayScore']?.toString() ?? '-') : "Nie obstawiono"}',
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                    ),
+                                    if (userWinnerDisplay != null) Text('Zwycięzca: $userWinnerDisplay', style: Theme.of(context).textTheme.titleSmall),
+                                  ],
                                 ),
-                            ],
+                                if (showWarning)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 8.0),
+                                    child: Icon(Icons.warning, color: Colors.red, size: 24.0),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

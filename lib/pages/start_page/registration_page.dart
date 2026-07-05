@@ -27,8 +27,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
     if (kIsWeb) {
       requestWebNotificationPermission();
     } else {
+      String msg = 'Powiadomienia konfiguruje się w ustawieniach systemu.';
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        msg = 'Aby otrzymywać powiadomienia na iPhone, dodaj aplikację do ekranu głównego (Share -> Add to Home Screen).';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Powiadomienia konfiguruje się w ustawieniach systemu.')),
+        SnackBar(content: Text(msg)),
       );
     }
   }
@@ -182,7 +186,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     child: OutlinedButton.icon(
                       onPressed: _requestNotificationPermission,
                       icon: const Icon(Icons.notifications_active),
-                      label: const Text('Włącz powiadomienia (iPhone)'),
+                      label: Text(
+                        kIsWeb ? 'Włącz powiadomienia' : 
+                        (defaultTargetPlatform == TargetPlatform.iOS ? 'Powiadomienia (instrukcja iPhone)' : 'Powiadomienia'),
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         side: const BorderSide(color: Colors.orangeAccent),
