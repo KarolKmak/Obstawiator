@@ -78,9 +78,36 @@ class _MatchBetsState extends State<MatchBets> {
         }
         if (data['matchBets'] != null) {
           otherUsersBetsData = List<Map<String, dynamic>>.from(data['matchBets']);
-          if (!widget.isGroupStage && data['winner'] != null) {
-            // Assuming 'winner' is part of the userBet or general match data
-            // For now, let's assume it's part of userBetData if applicable
+          if (widget.homeScore != null && widget.awayScore != null) {
+            otherUsersBetsData.sort((a, b) {
+              int pointsA = 0;
+              if (a['homeScore'] != null && a['awayScore'] != null) {
+                pointsA = calculatePoints(
+                  a['homeScore'],
+                  a['awayScore'],
+                  widget.homeScore!,
+                  widget.awayScore!,
+                  betWinner: a['winner'],
+                  actualWinner: widget.winner,
+                );
+              }
+              int pointsB = 0;
+              if (b['homeScore'] != null && b['awayScore'] != null) {
+                pointsB = calculatePoints(
+                  b['homeScore'],
+                  b['awayScore'],
+                  widget.homeScore!,
+                  widget.awayScore!,
+                  betWinner: b['winner'],
+                  actualWinner: widget.winner,
+                );
+              }
+
+              if (pointsB != pointsA) {
+                return pointsB.compareTo(pointsA);
+              }
+              return (a['name'] as String).toLowerCase().compareTo((b['name'] as String).toLowerCase());
+            });
           }
         } else {
           otherUsersBetsData = []; // Ensure otherUsersBetsData is reset if not present
@@ -197,6 +224,18 @@ class _MatchBetsState extends State<MatchBets> {
               // StatefulBuilder to manage checkbox state within the dialog
               StatefulBuilder(
                 builder: (BuildContext context, StateSetter setState) {
+                  void updateWinnerBasedOnScore() {
+                    final h = int.tryParse(homeScoreController.text);
+                    final a = int.tryParse(awayScoreController.text);
+                    if (h != null && a != null) {
+                      if (h > a) {
+                        setState(() => dialogSelectedWinner = 0);
+                      } else if (a > h) {
+                        setState(() => dialogSelectedWinner = 1);
+                      }
+                    }
+                  }
+
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
@@ -222,6 +261,9 @@ class _MatchBetsState extends State<MatchBets> {
                               keyboardType: TextInputType.number,
                               style: const TextStyle(fontSize: 16),
                               decoration: InputDecoration(labelText: 'Wynik ${widget.host}'),
+                              onChanged: (_) {
+                                if (!widget.isGroupStage) updateWinnerBasedOnScore();
+                              },
                             ),
                           ),
                         ],
@@ -243,6 +285,9 @@ class _MatchBetsState extends State<MatchBets> {
                               keyboardType: TextInputType.number,
                               style: const TextStyle(fontSize: 16),
                               decoration: InputDecoration(labelText: 'Wynik ${widget.guest}'),
+                              onChanged: (_) {
+                                if (!widget.isGroupStage) updateWinnerBasedOnScore();
+                              },
                             ),
                           ),
                         ],

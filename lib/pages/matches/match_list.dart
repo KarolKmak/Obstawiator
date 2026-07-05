@@ -455,9 +455,17 @@ class _MatchListState extends State<MatchList> {
                   ),
                 ],
               ),
-              subtitle: Text(
-                DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart),
-                textAlign: TextAlign.center,
+              subtitle: Column(
+                children: [
+                  Text(
+                    DateFormat('EEEE, dd/MM HH:mm', 'pl_PL').format(match.matchStart),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    match.isGroupStage ? "Faza grupowa" : "Faza pucharowa",
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
               ),
             ),
           ),

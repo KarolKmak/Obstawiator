@@ -89,7 +89,13 @@ class _UserBetsViewState extends State<UserBetsView> {
     final bool isFinished = bet['matchFinished'] == 1 || bet['matchFinished'] == true;
     final bool hasBet = bet['betHome'] != null;
     final DateTime matchDate = DateTime.fromMillisecondsSinceEpoch(bet['matchStart'], isUtc: true).toLocal();
+    final bool isGroupStage = bet['isGroupStage'] == true || bet['isGroupStage'] == 1 || bet['isGroupStage'] == 'true';
     
+    String? winnerDisplay;
+    if (!isGroupStage && hasBet && bet['betWinner'] != null) {
+      winnerDisplay = bet['betWinner'] == 0 ? bet['host'] : bet['guest'];
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
       child: Padding(
@@ -99,9 +105,18 @@ class _UserBetsViewState extends State<UserBetsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('dd/MM HH:mm', 'pl_PL').format(matchDate),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('dd/MM HH:mm', 'pl_PL').format(matchDate),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      isGroupStage ? "Faza grupowa" : "Faza pucharowa",
+                      style: const TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic),
+                    ),
+                  ],
                 ),
                 if (isFinished && bet['points'] != null)
                   Container(
@@ -169,12 +184,21 @@ class _UserBetsViewState extends State<UserBetsView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text("Zakład: ", style: TextStyle(color: Colors.grey)),
-                Text(
-                  hasBet ? "${bet['betHome']} : ${bet['betAway']}" : "Brak typu",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: hasBet ? null : Colors.red,
-                  ),
+                Column(
+                  children: [
+                    Text(
+                      hasBet ? "${bet['betHome']} : ${bet['betAway']}" : "Brak typu",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: hasBet ? null : Colors.red,
+                      ),
+                    ),
+                    if (winnerDisplay != null)
+                      Text(
+                        "Awans: $winnerDisplay",
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                      ),
+                  ],
                 ),
               ],
             ),
