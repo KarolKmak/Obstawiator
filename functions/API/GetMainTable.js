@@ -45,7 +45,18 @@ export async function onRequestPost(context) {
       ORDER BY S.points DESC
     `).all();
 
-    return new Response(JSON.stringify(results), {
+    // Pobierz oficjalne wyniki turnieju
+    const longTermResults = await db.prepare("SELECT champion, topScorer FROM ChampionBet LIMIT 1").first();
+    const settledData = longTermResults ? {
+      champion: longTermResults.champion,
+      topScorer: longTermResults.topScorer,
+      isSettled: !!(longTermResults.champion || longTermResults.topScorer)
+    } : null;
+
+    return new Response(JSON.stringify({
+      standings: results,
+      longTermResults: settledData
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });

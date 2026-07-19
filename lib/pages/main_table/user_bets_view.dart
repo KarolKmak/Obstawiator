@@ -17,6 +17,7 @@ class UserBetsView extends StatefulWidget {
 class _UserBetsViewState extends State<UserBetsView> {
   String _userName = "";
   List<dynamic> _bets = [];
+  Map<String, dynamic>? _longTermBets;
   bool _isLoading = true;
 
   @override
@@ -45,6 +46,7 @@ class _UserBetsViewState extends State<UserBetsView> {
         setState(() {
           _userName = data['userName'];
           _bets = data['bets'];
+          _longTermBets = data['longTermBets'];
           _isLoading = false;
         });
       } else {
@@ -73,16 +75,121 @@ class _UserBetsViewState extends State<UserBetsView> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _bets.isEmpty
+          : _bets.isEmpty && _longTermBets == null
               ? const Center(child: Text("Brak dostępnych zakładów"))
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 100.0),
-                  itemCount: _bets.length,
+                  itemCount: _bets.length + (_longTermBets != null ? 1 : 0),
                   itemBuilder: (context, index) {
-                    final bet = _bets[index];
+                    if (_longTermBets != null && index == 0) {
+                      return _buildLongTermBetCard(_longTermBets!);
+                    }
+                    final bet = _bets[_longTermBets != null ? index - 1 : index];
                     return _buildBetCard(bet);
                   },
                 ),
+    );
+  }
+
+  Widget _buildLongTermBetCard(Map<String, dynamic> data) {
+    final bool isSettled = data['isSettled'] == true;
+    
+    return Card(
+      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+      margin: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Typy Długoterminowe",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                if (isSettled)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "+${data['totalPoints']} pkt",
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                  ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildLongTermRow(
+              "Mistrz", 
+              data['userChampion'], 
+              data['actualChampion'], 
+              data['championPoints'], 
+              isSettled
+            ),
+            const SizedBox(height: 12),
+            _buildLongTermRow(
+              "Król Strzelców", 
+              data['userTopScorer'], 
+              data['actualTopScorer'], 
+              data['topScorerPoints'], 
+              isSettled
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLongTermRow(String label, String? userPick, String? actual, int points, bool isSettled) {
+    final bool isCorrect = isSettled && userPick != null && actual != null && 
+                          userPick.toLowerCase().trim() == actual.toLowerCase().trim();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                userPick ?? "brak typu",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: userPick == null ? Colors.red : null,
+                ),
+              ),
+            ),
+            if (isSettled)
+              Row(
+                children: [
+                  Icon(
+                    isCorrect ? Icons.check_circle : Icons.cancel,
+                    color: isCorrect ? Colors.green : Colors.red.withOpacity(0.5),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "+$points pkt",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: points > 0 ? Colors.green : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+        if (isSettled && !isCorrect && actual != null)
+          Text(
+            "Rozstrzygnięcie: $actual",
+            style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+          ),
+      ],
     );
   }
 

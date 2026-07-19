@@ -22,15 +22,18 @@ class _MyHomePageState extends State<MyHomePage>
 
   List<UserStandings> userStandingsTable = [];
   Map<int, int> _previousRanks = {};
+  bool _baselineEstablished = false;
+  Map<String, dynamic>? _longTermResults;
 
   Future<void> _loadPreviousRanks() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? ranksJson = prefs.getString('savedRanks');
+    final String? ranksJson = prefs.getString('savedRanks_v1');
     if (ranksJson != null) {
       try {
         final Map<String, dynamic> decoded = jsonDecode(ranksJson);
         setState(() {
           _previousRanks = decoded.map((key, value) => MapEntry(int.parse(key), value as int));
+          _baselineEstablished = true;
         });
       } catch (e) {
         if (kDebugMode) print("Error decoding ranks: $e");
@@ -41,7 +44,34 @@ class _MyHomePageState extends State<MyHomePage>
   Future<void> _saveCurrentRanks(Map<int, int> currentRanks) async {
     final prefs = await SharedPreferences.getInstance();
     final Map<String, int> toSave = currentRanks.map((key, value) => MapEntry(key.toString(), value));
-    await prefs.setString('savedRanks', jsonEncode(toSave));
+    await prefs.setString('savedRanks_v1', jsonEncode(toSave));
+  }
+
+  Future<void> _fetchLongTermResults() async {
+    try {
+      final response = await http.post(
+        Uri.parse("https://obstawiator.pages.dev/API/GetLongTermResults"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': main.sessionToken ?? '',
+        },
+        body: jsonEncode({
+          "ID": main.userID,
+          "sessionToken": main.sessionToken
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['isSettled'] == true) {
+          setState(() {
+            _longTermResults = data;
+          });
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print("Error fetching long term results: $e");
+    }
   }
 
   Future<void> fetchData() async
@@ -83,7 +113,16 @@ class _MyHomePageState extends State<MyHomePage>
       );
 
       if (response.statusCode == 200) {
-        var jsonData = jsonDecode(response.body) as List;
+        var bodyData = jsonDecode(response.body);
+        var jsonData = bodyData is List ? bodyData : bodyData['standings'] as List;
+        
+        // Jeśli otrzymaliśmy nowy format z wynikami długoterminowymi, zaktualizuj je
+        if (bodyData is Map && bodyData['longTermResults'] != null) {
+          setState(() {
+            _longTermResults = bodyData['longTermResults'];
+          });
+        }
+
         List<UserStandings> newStandings = [];
         for (var i = 0; i < jsonData.length; i++) {
           int id = jsonData[i]['ID'] ?? 0;
@@ -158,35 +197,78 @@ class _MyHomePageState extends State<MyHomePage>
   void initState()
   {
     super.initState();
-    _loadPreviousRanks().then((_) => fetchData());
+    _loadPreviousRanks().then((_) {
+      fetchData();
+      // _fetchLongTermResults(); // Już pobierane w fetchData()
+    });
   }
 
 
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox.expand(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            scrollDirection: Axis.vertical,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: DataTable(
-                  columnSpacing: constraints.maxWidth < 600 ? 10 : null,
-                  dividerThickness: 1,
-                  columns: _createColumns(),
-                  showCheckboxColumn: false,
-                  rows: _createRows(),
+    return Column(
+      children: [
+        if (_longTermResults != null)
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            width: double.infinity,
+            color: Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.4),
+            child: Column(
+              children: [
+                const Text(
+                  "🏆 Wyniki Końcowe Turnieju 🏆",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildResultChip("Mistrz", _longTermResults!['champion']),
+                    _buildResultChip("Król Strzelców", _longTermResults!['topScorer']),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: Center(
+            child: SizedBox.expand(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: DataTable(
+                        columnSpacing: constraints.maxWidth < 600 ? 10 : null,
+                        dividerThickness: 1,
+                        columns: _createColumns(),
+                        showCheckboxColumn: false,
+                        rows: _createRows(),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildResultChip(String label, String? value) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          value ?? "---",
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+      ],
     );
   }
   void _handleRowTap(int id) {
