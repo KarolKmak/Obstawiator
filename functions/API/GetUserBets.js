@@ -57,6 +57,37 @@ export async function onRequestPost(context) {
 
     const { results } = await stmt.all();
 
+    // Pobierz wyniki długoterminowe (Mistrz, Król)
+    const longTermResults = await db.prepare("SELECT champion, topScorer FROM ChampionBet LIMIT 1").first();
+    const userScores = await db.prepare("SELECT championBet, topScorerBet FROM UserScores WHERE ID = ?").bind(targetUserID).first();
+
+    let longTermBetData = null;
+    if (userScores) {
+      let championPoints = 0;
+      let topScorerPoints = 0;
+      const isSettled = !!(longTermResults && (longTermResults.champion || longTermResults.topScorer));
+
+      if (isSettled) {
+        if (userScores.championBet && longTermResults.champion && userScores.championBet.toLowerCase().trim() === longTermResults.champion.toLowerCase().trim()) {
+          championPoints = 15;
+        }
+        if (userScores.topScorerBet && longTermResults.topScorer && userScores.topScorerBet.toLowerCase().trim() === longTermResults.topScorer.toLowerCase().trim()) {
+          topScorerPoints = 10;
+        }
+      }
+
+      longTermBetData = {
+        userChampion: userScores.championBet,
+        userTopScorer: userScores.topScorerBet,
+        actualChampion: longTermResults?.champion || null,
+        actualTopScorer: longTermResults?.topScorer || null,
+        championPoints: championPoints,
+        topScorerPoints: topScorerPoints,
+        totalPoints: championPoints + topScorerPoints,
+        isSettled: isSettled
+      };
+    }
+
     // Przetwórz wyniki i oblicz punkty
     const processedResults = results.map(row => {
       let points = 0;
@@ -120,7 +151,8 @@ export async function onRequestPost(context) {
 
     return new Response(JSON.stringify({
       userName: targetUser.name,
-      bets: processedResults
+      bets: processedResults,
+      longTermBets: longTermBetData
     }), { status: 200, headers: { "Content-Type": "application/json" } });
 
   } catch (error) {
